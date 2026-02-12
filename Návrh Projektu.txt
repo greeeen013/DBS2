@@ -1,0 +1,4 @@
+Cílem projektu je vytvoření komplexní databázové aplikace pro správu MMA klubu, která bude sloužit jak trenérům, tak členům a administrátorům. 
+Systém bude evidovat uživatele a jejich různé úrovně přístupů (role), od běžných členů po specializované trenéry. Jádrem aplikace je správa tarifů (členství) a evidence plateb, včetně podpory slevových kódů a automatického hlídání prvního vstupu zdarma. 
+Součástí bude interaktivní rozvrh lekcí, který umožní rezervaci na skupinové tréninky (velké/malé lekce) i individuální lekce (1-na-1) s konkrétními trenéry při dodržení kapacitních limitů. 
+Aplikace bude sledovat reálnou docházku pomocí historie vstupů a umožní efektivní správu vytíženosti tělocvičny.
