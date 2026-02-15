@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: dbs2_postgres
+    environment:
+      POSTGRES_USER: admin_dbs2
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: mma_club_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Adminer - volitelné webové rozhraní pro správu DB (jako phpMyAdmin)
+  adminer:
+    image: adminer
+    container_name: dbs2_adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  db_data:
