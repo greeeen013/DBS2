@@ -1,156 +1,43 @@
-# DBS2 Projekt: Systém pro správu MMA klubu
+# Gym Management System - Pretorian
 
-Tento projekt slouží jako praktický výstup předmětu **DBS2**. Cílem je vytvoření komplexní databázové aplikace, která demonstruje znalost analýzy, modelování a implementace databázových systémů.
+Tento projekt je spojením tří předmětů: **Databázové systémy II**, **Programování II** a **Technologie pro publikování na Webu II**. Vznikl na [Univerzitě Hradec Králové](https://www.uhk.cz) v rámci letního semestru.
 
-> 🏫 Tento projekt vznikl jako **semestrální práce** do předmětu **DBS2 – Databázové systémy II** na [Univerzitě Hradec Králové](https://www.uhk.cz) v rámci letního semestru.
-
-## 📝 O projektu
-
-Aplikace řeší **správu MMA klubu** a je určena pro trenéry, členy i administrátory.
-
-### Hlavní funkcionality:
-*   **Správa uživatelů:** Evidence uživatelů s různými úrovněmi oprávnění (člen, trenér, admin).
-*   **Finance a Tarify:** Kompletní správa členství a plateb, včetně podpory slevových kódů a systému "první vstup zdarma".
-*   **Rezervační systém:** Interaktivní rozvrh pro rezervaci:
-    *   Skupinových tréninků (velké/malé lekce).
-    *   Individuálních lekcí (1-na-1) s konkrétními trenéry.
-    *   Automatická kontrola kapacitních limitů.
-*   **Docházka:** Sledování reálné docházky a historie vstupů pro analýzu vytíženosti tělocvičny.
+> 💡 **Další informace k jednotlivým předmětům** naleznete ve specifických `README.md` souborech v příslušných složkách:
+> - `DBS2/` (Zaměření na návrh struktury relační databáze)
+> - `PRO2/` (Zaměření na backendovou logiku s využitím ORM a DI/IoC)
+> - `TNPW2/` (Zaměření na frontend)
 
 ---
 
-## 🎯 Zadání a kritéria splnění (Checklist)
+## O čem projekt je
 
-Aplikace musí splňovat formální požadavky předmětu.
+Tento projekt tvoří **komplexní webovou aplikaci pro sportovní klub** (konkrétně zaměřeno pro MMA klub Pretorian). Systém slouží pro efektivní správu členů, evidenci jejich plateb, rezervační systém tréninků a kontrolu docházky. Důraz je u tohoto projektu kladen na to, aby šlo o rozšiřitelnou a modulární aplikaci, připravenou zvládnout budoucí provoz.
 
-### 🗄️ Databáze (Backend)
-- [ ] **M10+ Tabulek:** Datový model o rozsahu cca 10 tabulek.
-- [ ] **Číselník:** Alespoň jeden číselník (např. typy lekcí, stavy plateb).
-- [ ] **3x Pohled (View):** Minimálně tři pohledy využívané aplikací.
-- [ ] **3x Funkce:** Alespoň tři uživatelské funkce různého typu.
-- [ ] **3x Procedura:** Alespoň tři uložené procedury.
-- [ ] **2x Trigger:** Alespoň dva databázové spouštěče.
-- [ ] **1x Transakce:** Alespoň jedna transakce s ošetřeným `ROLLBACK` scénářem.
-- [ ] **Indexy:** Použití indexů na neklíčové sloupce pro optimalizaci.
-- [ ] **Kompozitní PK:** Využití kompozitních primárních klíčů.
-- [ ] **JSON (Volitelné):** Práce s datovým typem JSON (pokud dává smysl).
-- [ ] **Bezpečnost:** Aplikace se nepřipojuje jako `root`, ale má vlastního uživatele s omezenými právy.
+### Klíčové funkce a moduly
 
-### 💻 Aplikace (Frontend/Logic)
-- [ ] **Role:** Systém využívají min. 2 role (např. Admin + Klient).
-- [ ] **Formuláře:** Min. 2 plnohodnotné formuláře pro CRUD operace (vytváření/úprava dat) s validací.
-- [ ] **Obrázky:** Funkcionalita pro nahrávání a zobrazování obrázků.
-- [ ] **Technologie:** Vyšší programovací jazyk (C#, Java, PHP, Python...).
-- [ ] **Git:** Verzování vývoje.
-- [ ] **Docker (Doporučeno):** Nasazení pomocí `docker-compose`.
+1. **Správa členů a registrace:**
+   - Kdokoliv se může zaregistrovat ve webové aplikaci do systému.
+   - Uživatelé si vytvoří profil (s možností přidat fotografii a doplněním osobních údajů). Uživatel následně může například zažádat o první vstupy do klubu zdarma.
+   - Každý uživatel na svém profilu vidí aktuální kreditový zůstatek, jaké má platné tarify (permice) a svou osobní historii plateb a vstupů.
 
-### 📄 Výstupy a hodnocení (Max 50 bodů)
-*   **10b** - Databázový model a rozsah.
-*   **10b** - Implementace databáze.
-*   **10b** - Funkčnost aplikace.
-*   **10b** - Prezentace (10-15 min) + individuální přínos.
-*   **10b** - Dokumentace dle šablony:
-    *   Uživatelská a Programová dokumentace (ERD, Analýza, Datový slovník).
-    *   **Okomentované zdrojové kódy.**
-    *   **Backup (export) databáze.**
+2. **Platební systém a tarify:**
+   - Možnost zakoupení členských tarifů, které přidávají měsíční platnosti vstupu.
+   - Funkce na automatické kupování/obnovení tarifu, pokud aktuální vyprší a uživatel má dostatečný zůstatek kreditů.
+   - Přebírání dat z plateb - párování částky podle variabilního symbolu na konkrétního uživatele a připisování kreditů. Systém dbá na bezpečnost a důkladně operace loguje s možností dohledání.
 
----
+3. **Rezervační systém:**
+   - Trenéři mohou tvořit a spravovat tréninky (název, datum, čas konání, délka trvání a omezený počet míst). Mohou pro snadnější práci využít šablony (např. 10 minut rozcvička, 20 minut technika, 10 minut sparing atd.).
+   - Členové se do limitu přes aplikaci k tréninku přihlašují.
+   - Možnosti trenéra manuálně trénink stornovat nebo odhlásit konkrétního člena.
 
-## 🛠️ Použité technologie (Tech Stack)
+4. **Robustní logování aktivity:**
+   - Záznam naprosto veškeré historické aktivity: přesný čas návštěvy a opuštění gymu, jakého tréninku se člen zúčastnil, jaké tarify zakoupil, přehled všech transakcí a dobití účtu daného klienta pro dohledatelnost čehokoliv.
 
-*(Bude doplněno v průběhu vývoje)*
+5. **Uživatelské role:**
+   - **Člen** - Má svůj profil, dobíjí si kredity, řídí své tarify a registruje se na tréninky.
+   - **Trenér** - Vytváří a ruší tréninky, má přehled o svých lekcích a přihlášených cvičencích.
+   - **Recepce** - Možnost spravovat návštěvníky, ale bez pokročilých modifikací systému (cenotvorba apod.).
+   - **Admin** - Nejvyšší role pro kompletní správu všech částí klubu a kontrolních mechanizmů.
 
-*   **Jazyk:** Python 3.12
-*   **Databáze:** PostgreSQL 16
-*   **Kontejnerizace:** Docker + Docker Compose
-*   **Knihovny:** (bude upřesněno, např. psycopg2-binary, Flask/Django)
- 
- ---
- 
- ## 👥 Autoři projektu
- 
- *   **Jan Pospíšil** - [GitHub](https://github.com/greeeen013)
- *   **Jiří Černák** - [GitHub](https://github.com/SlightlySaltedTeriyaki)
- *   **Dominik Hájek** - [GitHub](https://github.com/DominikHajek)
- 
- ---
-
-# 🛠️ Postup Práce
-
-## 📅 1. Fáze: Rozjezd a Analýza (1.-2.týden)
-Cíl: Mít funkční prostředí a schválený datový model.
-
-### 1.1 Technické prostředí
-- [x] Vytvořit `README.md` s kontextem.
-- [x] Vytvořit `docker-compose.yml`.
-- [x] **Rozchodit připojení k databázi** (ověřit funkčnost Admineru).
-- [x] Vytvořit virtuální prostředí Pythonu (`venv`) a `requirements.txt`.
-
-### 1.2 Datová analýza a Modelování (10b)
-*Nutné pro konzultaci ve 3.-4. týdnu!*
-- [ ] **ERD (Entity Relationship Diagram):** Navrhnout grafické schéma.
-    - [ ] Identifikovat entity (Člen, Trenér, Tarif, Platba, Trénink, Rezervace, Docházka...).
-    - [ ] Definovat vztahy (kardinality 1:N, M:N).
-- [ ] **Logický model:** Přepsat ERD do tabulek a atributů.
-    - [ ] Zajistit 3. normální formu (3NF).
-    - [ ] Navrhnout kompozitní klíče (dle zadání).
-- [ ] **Skript pro vytvoření DB (`init.sql`):**
-    - [ ] Napsat DDL příkazy (`CREATE TABLE`).
-    - [ ] Přidat integritní omezení (PK, FK, NOT NULL, CHECK).
-
----
-
-## 🔨 2. Fáze: Implementace Databáze (Backend) (10b)
-Cíl: Naplnit DB daty a naprogramovat logiku.
-
-### 2.1 Struktura a Data
-- [ ] Spustit `init.sql` a vytvořit tabulky (cca 10+).
-- [ ] Vytvořit **číselníky** (např. typ lekce: MMA, Box, BJJ).
-- [ ] Připravit testovací data (Mock Data) a nahrát je do tabulek.
-
-### 2.2 Programovatelné objekty (Nutné splnit počty!)
-- [ ] **3x Pohled (View):**
-    - [ ] 1. Pohled: Přehled dlužníků (Kdo nezaplatil členství).
-    - [ ] 2. Pohled: Rozvrh na aktuální týden s kapacitou.
-    - [ ] 3. Pohled: Statistiky návštěvnosti trenérů.
-- [ ] **3x Funkce (Function):**
-    - [ ] 1. Výpočet aktuální ceny tarifu (se slevou).
-    - [ ] 2. Kontrola volné kapacity lekce (vrací True/False).
-    - [ ] 3. Získání detailů člena jako JSON.
-- [ ] **3x Procedura (Stored Procedure):**
-    - [ ] 1. Vytvoření nové rezervace (s kontrolou kreditu).
-    - [ ] 2. Uzavření měsíčního vyúčtování.
-    - [ ] 3. Archivace neaktivních členů.
-- [ ] **2x Trigger:**
-    - [ ] 1. Logování změn v uživatelském profilu (History tabulka).
-    - [ ] 2. Automatické snížení kreditu po rezervaci.
-- [ ] **1x Transakce:**
-    - [ ] Platba členství (Vytvoření záznamu o platbě + prodloužení platnosti tarifu v jedné transakci).
-
----
-
-## 💻 3. Fáze: Vývoj Aplikace (Frontend/Logic) (10b)
-Cíl: Vytvořit GUI pro uživatele.
-
-### 3.1 Základ aplikace
-- [ ] Vybrat framework (navrhuji **Flask** nebo **FastAPI** pro jednoduchost, případně **Django**).
-- [ ] Vytvořit strukturu projektu.
-- [ ] Připojení k DB z Pythonu (driver `psycopg`).
-
-### 3.2 Implementace formulářů a rolí
-- [ ] **Login systém:** Rozlišení rolí (Admin, Trenér, Člen).
-- [ ] **Formulář 1 (Admin/Trenér):** Správa tréninků (CRUD - Přidat, Upravit, Smazat lekci).
-- [ ] **Formulář 2 (Člen):** Rezervační formulář (Výběr lekce -> Potvrzení).
-- [ ] Zobrazení dat z Pohledů (např. "Můj rozvrh").
-- [ ] Nahrávání profilových obrázků.
-
----
-
-## 📚 4. Fáze: Dokumentace a Finalizace (10b + 10b)
-Cíl: Příprava na odevzdání.
-
-- [ ] **Export (Backup) DB.**
-- [ ] Generování dokumentace ze schématu.
-- [ ] Sepsání Uživatelské příručky.
-- [ ] Příprava prezentace.
-- [ ] Final code review a komentáře v kódu.
+## Co projekt neobsahuje
+Je nutné zmínit, že se v tomto akademickém projektu soustředíme primárně na databázovou/webovou část a správu logiky. Neřešíme a na implementaci zde nebudeme zařazovat věci jako vyčítání lokálního hardwaru - aplikace sloužící recepcím (lokální .exe či desktopový program komunikující se čtečkami NFC a turnikety pro odpípávání vstupu). Tato klientská odbavovací aplikace bude realizovaná v rámci jiného, odděleného projektu. V návrhu DB s těmito událostmi již ale budeme samozřejmě počítat.
