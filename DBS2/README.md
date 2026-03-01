@@ -144,6 +144,9 @@ Cíl: Vytvořit GUI pro uživatele.
 - [ ] Zobrazení dat z Pohledů (např. "Můj rozvrh").
 - [ ] Nahrávání profilových obrázků.
 
+> ℹ️ **Poznámka k UI a frontendové analýze:** 
+> Podrobná charakteristika uživatelského rozhraní, rozpad jednotlivých rolí v aplikaci (Member, Trainer, Guest) a přesné vymezení povolených akcí, ze kterých budou vycházet aplikační formuláře, jsou detailně zpracovány v rámci naší paralelní semestrální práce. **Kompletní specifikaci UI a frontendové architektury naleznete v souboru [TNPW2/README.md](../TNPW2/README.md).**
+
 ---
 
 ## 📚 4. Fáze: Dokumentace a Finalizace (10b + 10b)
