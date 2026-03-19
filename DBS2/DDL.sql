@@ -6,49 +6,49 @@
 
 /* Drop Sequences for Autonumber Columns */
 
-DROP SEQUENCE IF EXISTS account_accountid_seq
+DROP SEQUENCE IF EXISTS account_account_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS address_addressid_seq
+DROP SEQUENCE IF EXISTS address_address_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS attendance_attendanceid_seq
+DROP SEQUENCE IF EXISTS attendance_attendance_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS certificate_certificateid_seq
+DROP SEQUENCE IF EXISTS certificate_certificate_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS discountcode_discountcodeid_seq
+DROP SEQUENCE IF EXISTS discount_code_discount_code_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS employee_employeeid_seq
+DROP SEQUENCE IF EXISTS employee_employee_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS lesson_template_lesson_templateid_seq
+DROP SEQUENCE IF EXISTS lesson_template_lesson_template_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS lesson_type_lesson_typeid_seq
+DROP SEQUENCE IF EXISTS lesson_type_lesson_type_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS member_memberid_seq
+DROP SEQUENCE IF EXISTS member_member_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS membership_membershipid_seq
+DROP SEQUENCE IF EXISTS membership_membership_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS payment_paymentid_seq
+DROP SEQUENCE IF EXISTS payment_payment_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS reservation_reservationid_seq
+DROP SEQUENCE IF EXISTS reservation_reservation_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS scheduled_lesson_scheduled_lessonid_seq
+DROP SEQUENCE IF EXISTS lesson_schedule_lesson_schedule_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS tariff_tariffid_seq
+DROP SEQUENCE IF EXISTS tariff_tariff_id_seq
 ;
 
-DROP SEQUENCE IF EXISTS trainernote_trainernoteid_seq
+DROP SEQUENCE IF EXISTS trainer_note_trainer_note_id_seq
 ;
 
 /* Drop Tables */
@@ -65,7 +65,7 @@ DROP TABLE IF EXISTS "Attendance" CASCADE
 DROP TABLE IF EXISTS "Certificate" CASCADE
 ;
 
-DROP TABLE IF EXISTS "Discountcode" CASCADE
+DROP TABLE IF EXISTS "Discount_code" CASCADE
 ;
 
 DROP TABLE IF EXISTS "Employee" CASCADE
@@ -77,7 +77,7 @@ DROP TABLE IF EXISTS "Lesson_template" CASCADE
 DROP TABLE IF EXISTS "Lesson_type" CASCADE
 ;
 
-DROP TABLE IF EXISTS "Lesson_typeTariff" CASCADE
+DROP TABLE IF EXISTS "Lesson_type_Tariff" CASCADE
 ;
 
 DROP TABLE IF EXISTS "Member" CASCADE
@@ -92,16 +92,16 @@ DROP TABLE IF EXISTS "Payment" CASCADE
 DROP TABLE IF EXISTS "Reservation" CASCADE
 ;
 
-DROP TABLE IF EXISTS "ReservationPayment" CASCADE
+DROP TABLE IF EXISTS "Reservation_payment" CASCADE
 ;
 
-DROP TABLE IF EXISTS "Scheduled_lesson" CASCADE
+DROP TABLE IF EXISTS "Lesson_schedule" CASCADE
 ;
 
 DROP TABLE IF EXISTS "Tariff" CASCADE
 ;
 
-DROP TABLE IF EXISTS "Trainernote" CASCADE
+DROP TABLE IF EXISTS "Trainer_note" CASCADE
 ;
 
 /* Create Tables */
@@ -113,7 +113,7 @@ CREATE TABLE "Account"
 	"Is_blocked" boolean NULL,
 	"Password" text NULL,
 	"Role" varchar(50) NULL,
-	"AccountID" integer NOT NULL   DEFAULT NEXTVAL(('"account_accountid_seq"'::text)::regclass)
+	"Account_ID" integer NOT NULL   DEFAULT NEXTVAL(('"account_account_id_seq"'::text)::regclass)
 )
 ;
 
@@ -126,10 +126,10 @@ CREATE TABLE "Address"
 	"Region" varchar(200) NULL,
 	"State" varchar(200) NOT NULL,
 	"Street" varchar(200) NULL,
-	"AddressID" integer NOT NULL   DEFAULT NEXTVAL(('"address_addressid_seq"'::text)::regclass),
-	"EmployeeID" integer NULL,
-	"MemberID" integer NULL,
-	CONSTRAINT "CHK_Address_Owner" CHECK (("EmployeeID" IS NOT NULL) OR ("MemberID" IS NOT NULL))
+	"Address_ID" integer NOT NULL   DEFAULT NEXTVAL(('"address_address_id_seq"'::text)::regclass),
+	"Employee_ID" integer NULL,
+	"Member_ID" integer NULL,
+	CONSTRAINT "CHK_Address_Owner" CHECK (("Employee_ID" IS NOT NULL) OR ("Member_ID" IS NOT NULL))
 )
 ;
 
@@ -138,8 +138,8 @@ CREATE TABLE "Attendance"
 	"Entry_type" varchar(50) NULL,
 	"Timestamp_entrance" timestamp without time zone NOT NULL,
 	"Timestamp_exit" timestamp without time zone NULL,
-	"AttendanceID" integer NOT NULL   DEFAULT NEXTVAL(('"attendance_attendanceid_seq"'::text)::regclass),
-	"MemberID" integer NULL
+	"Attendance_ID" integer NOT NULL   DEFAULT NEXTVAL(('"attendance_attendance_id_seq"'::text)::regclass),
+	"Member_ID" integer NULL
 )
 ;
 
@@ -154,17 +154,17 @@ CREATE TABLE "Certificate"
 	"Type" varchar(200) NOT NULL,
 	"Url" varchar(500) NULL,
 	"Valid_to" date NOT NULL,
-	"CertificateID" integer NOT NULL   DEFAULT NEXTVAL(('"certificate_certificateid_seq"'::text)::regclass),
-	"EmployeeID" integer NULL
+	"Certificate_ID" integer NOT NULL   DEFAULT NEXTVAL(('"certificate_certificate_id_seq"'::text)::regclass),
+	"Employee_ID" integer NULL
 )
 ;
 
-CREATE TABLE "Discountcode"
+CREATE TABLE "Discount_code"
 (
 	"Discount_percent" numeric(10,2) NOT NULL,
 	"Expire_date" timestamp without time zone NOT NULL,
 	"Name" varchar(50) NOT NULL,
-	"DiscountcodeID" smallint NOT NULL   DEFAULT NEXTVAL(('"discountcode_discountcodeid_seq"'::text)::regclass)
+	"Discount_code_ID" smallint NOT NULL   DEFAULT NEXTVAL(('"discount_code_discount_code_id_seq"'::text)::regclass)
 )
 ;
 
@@ -176,7 +176,7 @@ CREATE TABLE "Employee"
 	"Role" varchar(200) NULL,
 	"Start_date" date NOT NULL,
 	"Type_of_empoyment" varchar(50) NOT NULL,
-	"EmployeeID" integer NOT NULL   DEFAULT NEXTVAL(('"employee_employeeid_seq"'::text)::regclass)
+	"Employee_ID" integer NOT NULL   DEFAULT NEXTVAL(('"employee_employee_id_seq"'::text)::regclass)
 )
 ;
 
@@ -187,8 +187,8 @@ CREATE TABLE "Lesson_template"
 	"Maximum_capacity" smallint NOT NULL,
 	"Name" varchar(200) NOT NULL,
 	"Price" numeric(10,2) NOT NULL,
-	"Lesson_templateID" integer NOT NULL   DEFAULT NEXTVAL(('"lesson_template_lesson_templateid_seq"'::text)::regclass),
-	"Lesson_typeID" smallint NOT NULL
+	"Lesson_template_ID" integer NOT NULL   DEFAULT NEXTVAL(('"lesson_template_lesson_template_id_seq"'::text)::regclass),
+	"Lesson_type_ID" smallint NOT NULL
 )
 ;
 
@@ -196,14 +196,14 @@ CREATE TABLE "Lesson_type"
 (
 	"Description" text NULL,
 	"Name" varchar(100) NOT NULL,
-	"Lesson_typeID" smallint NOT NULL   DEFAULT NEXTVAL(('"lesson_type_lesson_typeid_seq"'::text)::regclass)
+	"Lesson_type_ID" smallint NOT NULL   DEFAULT NEXTVAL(('"lesson_type_lesson_type_id_seq"'::text)::regclass)
 )
 ;
 
-CREATE TABLE "Lesson_typeTariff"
+CREATE TABLE "Lesson_type_Tariff"
 (
-	"TariffID" smallint NOT NULL,
-	"Lesson_typeID" smallint NOT NULL
+	"Tariff_ID" smallint NOT NULL,
+	"Lesson_type_ID" smallint NOT NULL
 )
 ;
 
@@ -218,8 +218,8 @@ CREATE TABLE "Member"
 	"Phone_number" varchar(50) NULL,
 	"Photo" text NULL,
 	"Surname" varchar(100) NOT NULL,
-	"MemberID" integer NOT NULL   DEFAULT NEXTVAL(('"member_memberid_seq"'::text)::regclass),
-	"AccountID" integer NULL
+	"Member_ID" integer NOT NULL   DEFAULT NEXTVAL(('"member_member_id_seq"'::text)::regclass),
+	"Account_ID" integer NULL
 )
 ;
 
@@ -229,9 +229,9 @@ CREATE TABLE "Membership"
 	"Is_auto_renewal" boolean NULL,
 	"Valid_from" timestamp without time zone NOT NULL,
 	"Valid_to" timestamp without time zone NOT NULL,
-	"MembershipID" integer NOT NULL   DEFAULT NEXTVAL(('"membership_membershipid_seq"'::text)::regclass),
-	"MemberID" integer NOT NULL,
-	"TariffID" smallint NOT NULL
+	"Membership_ID" integer NOT NULL   DEFAULT NEXTVAL(('"membership_membership_id_seq"'::text)::regclass),
+	"Member_ID" integer NOT NULL,
+	"Tariff_ID" smallint NOT NULL
 )
 ;
 
@@ -242,10 +242,10 @@ CREATE TABLE "Payment"
 	"Payment_details" text NULL,
 	"Payment_type" varchar(50) NULL,
 	"Status" varchar(50) NULL,
-	"PaymentID" integer NOT NULL   DEFAULT NEXTVAL(('"payment_paymentid_seq"'::text)::regclass),
-	"DiscountcodeID" smallint NULL,
-	"MemberID" integer NULL,
-	"MembershipID" integer NULL
+	"Payment_ID" integer NOT NULL   DEFAULT NEXTVAL(('"payment_payment_id_seq"'::text)::regclass),
+	"Discount_code_ID" smallint NULL,
+	"Member_ID" integer NULL,
+	"Membership_ID" integer NULL
 )
 ;
 
@@ -257,20 +257,34 @@ CREATE TABLE "Reservation"
 	"Status" varchar(50) NOT NULL,
 	"Timestamp_creation" timestamp without time zone NOT NULL,
 	"Timestamp_change" timestamp without time zone NULL,
-	"ReservationID" integer NOT NULL   DEFAULT NEXTVAL(('"reservation_reservationid_seq"'::text)::regclass),
-	"MemberID" integer NOT NULL,
-	"Scheduled_lessonID" integer NOT NULL
+	"Reservation_ID" integer NOT NULL   DEFAULT NEXTVAL(('"reservation_reservation_id_seq"'::text)::regclass),
+	"Member_ID" integer NOT NULL,
+	"Lesson_schedule_ID" integer NOT NULL
 )
 ;
 
-CREATE TABLE "ReservationPayment"
+CREATE TABLE "Reservation_payment"
 (
-	"PaymentID" integer NULL,
-	"ReservationID" integer NULL
+	"Payment_ID" integer NULL,
+	"Reservation_ID" integer NULL
 )
 ;
 
-CREATE TABLE "Scheduled_lesson"
+/*
+ * POZNÁMKA K LOKICE PŘÍSTUPŮ A PLATEB ZA LEKCE (BUDOUCNOST):
+ * 1. Lekce na Kredity:
+ *    Má nastavenou "Price" > 0. Při tvorbě rezervace backend strhává kredity přímo z účtu člena (Member.Credit_balance).
+ * 
+ * 2. Lekce na Tarif / Permanentku (Základ pro V1):
+ *    "Price" je NULL (nebo 0). Lekce má povinný Lesson_type_ID. Backend ověřuje přístup přes propojovací
+ *    tabulku Lesson_type_Tariff -> zkontroluje, zda má uživatel aktivní zápis v tabulce Membership pro povolený Tarif.
+ * 
+ * 3. Open lekce (přístupné všem pouhou registrací):
+ *    Využívá stejný systém tarifů jako bod 2. V tabulce Tariff bude vytvořen např. "Základní/Free tarif" s cenou 0.
+ *    Každý nový Member ho dostane automaticky po registraci do tabulky Membership (řeší backend nebo trigger). 
+ *    V Lesson_type_Tariff se pak tento bezplatný tarif propojí s "Open" typy lekcí. Není nutná změna ve struktuře DDL.
+ */
+CREATE TABLE "Lesson_schedule"
 (
 	"Description" text NULL,
 	"Duration" smallint NOT NULL,
@@ -281,10 +295,10 @@ CREATE TABLE "Scheduled_lesson"
 	"Price" numeric(10,2) NULL, /* lekce se platí přes tarify/permanentky, cena lekce se nevyžaduje. Do budoucna: pokud vyplněno, lekce bude mít vlastní cenu v kreditech (např. privátní/speciální lekce mimo tarif). */
 	"Start_time" timestamp without time zone NOT NULL,
 	"Status" varchar(50) NOT NULL,
-	"Scheduled_lessonID" integer NOT NULL   DEFAULT NEXTVAL(('"scheduled_lesson_scheduled_lessonid_seq"'::text)::regclass),
-	"EmployeeID" integer NOT NULL,
-	"Lesson_templateID" integer NULL,
-	"Lesson_typeID" smallint NOT NULL
+	"Lesson_schedule_ID" integer NOT NULL   DEFAULT NEXTVAL(('"lesson_schedule_lesson_schedule_id_seq"'::text)::regclass),
+	"Employee_ID" integer NOT NULL,
+	"Lesson_template_ID" integer NULL,
+	"Lesson_type_ID" smallint NOT NULL
 )
 ;
 
@@ -293,223 +307,223 @@ CREATE TABLE "Tariff"
 	"Description" text NULL,
 	"Name" varchar(100) NOT NULL,
 	"Price" numeric(10,2) NOT NULL,
-	"TariffID" smallint NOT NULL   DEFAULT NEXTVAL(('"tariff_tariffid_seq"'::text)::regclass)
+	"Tariff_ID" smallint NOT NULL   DEFAULT NEXTVAL(('"tariff_tariff_id_seq"'::text)::regclass)
 )
 ;
 
-CREATE TABLE "Trainernote"
+CREATE TABLE "Trainer_note"
 (
 	"Created_at" timestamp without time zone NULL,
 	"Text" text NULL,
-	"TrainernoteID" integer NOT NULL   DEFAULT NEXTVAL(('"trainernote_trainernoteid_seq"'::text)::regclass),
-	"EmployeeID" integer NULL,
-	"MemberID" integer NULL
+	"Trainer_note_ID" integer NOT NULL   DEFAULT NEXTVAL(('"trainer_note_trainer_note_id_seq"'::text)::regclass),
+	"Employee_ID" integer NULL,
+	"Member_ID" integer NULL
 )
 ;
 
 /* Create Primary Keys, Indexes, Uniques, Checks */
 
 ALTER TABLE "Account" ADD CONSTRAINT "PK_Account"
-	PRIMARY KEY ("AccountID")
+	PRIMARY KEY ("Account_ID")
 ;
 
 ALTER TABLE "Address" ADD CONSTRAINT "PK_Address"
-	PRIMARY KEY ("AddressID")
+	PRIMARY KEY ("Address_ID")
 ;
 
 ALTER TABLE "Attendance" ADD CONSTRAINT "PK_Attendance"
-	PRIMARY KEY ("AttendanceID")
+	PRIMARY KEY ("Attendance_ID")
 ;
 
 ALTER TABLE "Certificate" ADD CONSTRAINT "PK_Certificate"
-	PRIMARY KEY ("CertificateID")
+	PRIMARY KEY ("Certificate_ID")
 ;
 
-ALTER TABLE "Discountcode" ADD CONSTRAINT "PK_Discountcode"
-	PRIMARY KEY ("DiscountcodeID")
+ALTER TABLE "Discount_code" ADD CONSTRAINT "PK_Discount_code"
+	PRIMARY KEY ("Discount_code_ID")
 ;
 
 ALTER TABLE "Employee" ADD CONSTRAINT "PK_Employee"
-	PRIMARY KEY ("EmployeeID")
+	PRIMARY KEY ("Employee_ID")
 ;
 
 ALTER TABLE "Lesson_template" ADD CONSTRAINT "PK_Lesson_template"
-	PRIMARY KEY ("Lesson_templateID")
+	PRIMARY KEY ("Lesson_template_ID")
 ;
 
 ALTER TABLE "Lesson_type" ADD CONSTRAINT "PK_Lesson_type"
-	PRIMARY KEY ("Lesson_typeID")
+	PRIMARY KEY ("Lesson_type_ID")
 ;
 
-ALTER TABLE "Lesson_typeTariff" ADD CONSTRAINT "PK_Lesson_typeTariff"
-	PRIMARY KEY ("TariffID", "Lesson_typeID")
+ALTER TABLE "Lesson_type_Tariff" ADD CONSTRAINT "PK_Lesson_type_Tariff"
+	PRIMARY KEY ("Tariff_ID", "Lesson_type_ID")
 ;
 
 ALTER TABLE "Member" ADD CONSTRAINT "PK_Member"
-	PRIMARY KEY ("MemberID")
+	PRIMARY KEY ("Member_ID")
 ;
 
 ALTER TABLE "Membership" ADD CONSTRAINT "PK_Membership"
-	PRIMARY KEY ("MembershipID")
+	PRIMARY KEY ("Membership_ID")
 ;
 
 ALTER TABLE "Payment" ADD CONSTRAINT "PK_Payment"
-	PRIMARY KEY ("PaymentID")
+	PRIMARY KEY ("Payment_ID")
 ;
 
 ALTER TABLE "Reservation" ADD CONSTRAINT "PK_Reservation"
-	PRIMARY KEY ("ReservationID")
+	PRIMARY KEY ("Reservation_ID")
 ;
 
-ALTER TABLE "Scheduled_lesson" ADD CONSTRAINT "PK_Scheduled_lesson"
-	PRIMARY KEY ("Scheduled_lessonID")
+ALTER TABLE "Lesson_schedule" ADD CONSTRAINT "PK_Lesson_schedule"
+	PRIMARY KEY ("Lesson_schedule_ID")
 ;
 
 ALTER TABLE "Tariff" ADD CONSTRAINT "PK_Tariff"
-	PRIMARY KEY ("TariffID")
+	PRIMARY KEY ("Tariff_ID")
 ;
 
-ALTER TABLE "Trainernote" ADD CONSTRAINT "PK_Trainernote"
-	PRIMARY KEY ("TrainernoteID")
+ALTER TABLE "Trainer_note" ADD CONSTRAINT "PK_Trainer_note"
+	PRIMARY KEY ("Trainer_note_ID")
 ;
 
 /* Create Foreign Key Constraints */
 
 ALTER TABLE "Address" ADD CONSTRAINT "FK_Address_Employee"
-	FOREIGN KEY ("EmployeeID") REFERENCES "Employee" ("EmployeeID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Employee_ID") REFERENCES "Employee" ("Employee_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Address" ADD CONSTRAINT "FK_Address_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Attendance" ADD CONSTRAINT "FK_Attendance_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Certificate" ADD CONSTRAINT "FK_Certificate_Employee"
-	FOREIGN KEY ("EmployeeID") REFERENCES "Employee" ("EmployeeID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Employee_ID") REFERENCES "Employee" ("Employee_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Employee" ADD CONSTRAINT "FK_Employee_Member"
-	FOREIGN KEY ("EmployeeID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Employee_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Lesson_template" ADD CONSTRAINT "FK_Lesson_template_Lesson_type"
-	FOREIGN KEY ("Lesson_typeID") REFERENCES "Lesson_type" ("Lesson_typeID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Lesson_type_ID") REFERENCES "Lesson_type" ("Lesson_type_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Lesson_typeTariff" ADD CONSTRAINT "FK_Lesson_typeTariff_Tariff"
-	FOREIGN KEY ("TariffID") REFERENCES "Tariff" ("TariffID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Lesson_type_Tariff" ADD CONSTRAINT "FK_Lesson_type_Tariff_Tariff"
+	FOREIGN KEY ("Tariff_ID") REFERENCES "Tariff" ("Tariff_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Lesson_typeTariff" ADD CONSTRAINT "FK_Lesson_typeTariff_Lesson_type"
-	FOREIGN KEY ("Lesson_typeID") REFERENCES "Lesson_type" ("Lesson_typeID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Lesson_type_Tariff" ADD CONSTRAINT "FK_Lesson_type_Tariff_Lesson_type"
+	FOREIGN KEY ("Lesson_type_ID") REFERENCES "Lesson_type" ("Lesson_type_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Member" ADD CONSTRAINT "FK_Member_Account"
-	FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Account_ID") REFERENCES "Account" ("Account_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Membership" ADD CONSTRAINT "FK_Membership_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Membership" ADD CONSTRAINT "FK_Membership_Tariff"
-	FOREIGN KEY ("TariffID") REFERENCES "Tariff" ("TariffID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Tariff_ID") REFERENCES "Tariff" ("Tariff_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Payment" ADD CONSTRAINT "FK_Payment_Discountcode"
-	FOREIGN KEY ("DiscountcodeID") REFERENCES "Discountcode" ("DiscountcodeID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Payment" ADD CONSTRAINT "FK_Payment_Discount_code"
+	FOREIGN KEY ("Discount_code_ID") REFERENCES "Discount_code" ("Discount_code_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Payment" ADD CONSTRAINT "FK_Payment_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Payment" ADD CONSTRAINT "FK_Payment_Membership"
-	FOREIGN KEY ("MembershipID") REFERENCES "Membership" ("MembershipID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Membership_ID") REFERENCES "Membership" ("Membership_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 ALTER TABLE "Reservation" ADD CONSTRAINT "FK_Reservation_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Reservation" ADD CONSTRAINT "FK_Reservation_Scheduled_lesson"
-	FOREIGN KEY ("Scheduled_lessonID") REFERENCES "Scheduled_lesson" ("Scheduled_lessonID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Reservation" ADD CONSTRAINT "FK_Reservation_Lesson_schedule"
+	FOREIGN KEY ("Lesson_schedule_ID") REFERENCES "Lesson_schedule" ("Lesson_schedule_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "ReservationPayment" ADD CONSTRAINT "FK_ReservationPayment_Payment"
-	FOREIGN KEY ("PaymentID") REFERENCES "Payment" ("PaymentID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Reservation_payment" ADD CONSTRAINT "FK_Reservation_payment_Payment"
+	FOREIGN KEY ("Payment_ID") REFERENCES "Payment" ("Payment_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "ReservationPayment" ADD CONSTRAINT "FK_ReservationPayment_Reservation"
-	FOREIGN KEY ("ReservationID") REFERENCES "Reservation" ("ReservationID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Reservation_payment" ADD CONSTRAINT "FK_Reservation_payment_Reservation"
+	FOREIGN KEY ("Reservation_ID") REFERENCES "Reservation" ("Reservation_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Scheduled_lesson" ADD CONSTRAINT "FK_Scheduled_lesson_Employee"
-	FOREIGN KEY ("EmployeeID") REFERENCES "Employee" ("EmployeeID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Lesson_schedule" ADD CONSTRAINT "FK_Lesson_schedule_Employee"
+	FOREIGN KEY ("Employee_ID") REFERENCES "Employee" ("Employee_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Scheduled_lesson" ADD CONSTRAINT "FK_Scheduled_lesson_Lesson_template"
-	FOREIGN KEY ("Lesson_templateID") REFERENCES "Lesson_template" ("Lesson_templateID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Lesson_schedule" ADD CONSTRAINT "FK_Lesson_schedule_Lesson_template"
+	FOREIGN KEY ("Lesson_template_ID") REFERENCES "Lesson_template" ("Lesson_template_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Scheduled_lesson" ADD CONSTRAINT "FK_Scheduled_lesson_Lesson_type"
-	FOREIGN KEY ("Lesson_typeID") REFERENCES "Lesson_type" ("Lesson_typeID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Lesson_schedule" ADD CONSTRAINT "FK_Lesson_schedule_Lesson_type"
+	FOREIGN KEY ("Lesson_type_ID") REFERENCES "Lesson_type" ("Lesson_type_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Trainernote" ADD CONSTRAINT "FK_Trainernote_Employee"
-	FOREIGN KEY ("EmployeeID") REFERENCES "Employee" ("EmployeeID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Trainer_note" ADD CONSTRAINT "FK_Trainer_note_Employee"
+	FOREIGN KEY ("Employee_ID") REFERENCES "Employee" ("Employee_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
-ALTER TABLE "Trainernote" ADD CONSTRAINT "FK_Trainernote_Member"
-	FOREIGN KEY ("MemberID") REFERENCES "Member" ("MemberID") ON DELETE No Action ON UPDATE No Action
+ALTER TABLE "Trainer_note" ADD CONSTRAINT "FK_Trainer_note_Member"
+	FOREIGN KEY ("Member_ID") REFERENCES "Member" ("Member_ID") ON DELETE No Action ON UPDATE No Action
 ;
 
 /* Create Table Comments, Sequences for Autonumber Columns */
 
-CREATE SEQUENCE account_accountid_seq INCREMENT 1 START 1
+CREATE SEQUENCE account_account_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE address_addressid_seq INCREMENT 1 START 1
+CREATE SEQUENCE address_address_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE attendance_attendanceid_seq INCREMENT 1 START 1
+CREATE SEQUENCE attendance_attendance_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE certificate_certificateid_seq INCREMENT 1 START 1
+CREATE SEQUENCE certificate_certificate_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE discountcode_discountcodeid_seq INCREMENT 1 START 1
+CREATE SEQUENCE discount_code_discount_code_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE employee_employeeid_seq INCREMENT 1 START 1
+CREATE SEQUENCE employee_employee_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE lesson_template_lesson_templateid_seq INCREMENT 1 START 1
+CREATE SEQUENCE lesson_template_lesson_template_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE lesson_type_lesson_typeid_seq INCREMENT 1 START 1
+CREATE SEQUENCE lesson_type_lesson_type_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE member_memberid_seq INCREMENT 1 START 1
+CREATE SEQUENCE member_member_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE membership_membershipid_seq INCREMENT 1 START 1
+CREATE SEQUENCE membership_membership_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE payment_paymentid_seq INCREMENT 1 START 1
+CREATE SEQUENCE payment_payment_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE reservation_reservationid_seq INCREMENT 1 START 1
+CREATE SEQUENCE reservation_reservation_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE scheduled_lesson_scheduled_lessonid_seq INCREMENT 1 START 1
+CREATE SEQUENCE lesson_schedule_lesson_schedule_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE tariff_tariffid_seq INCREMENT 1 START 1
+CREATE SEQUENCE tariff_tariff_id_seq INCREMENT 1 START 1
 ;
 
-CREATE SEQUENCE trainernote_trainernoteid_seq INCREMENT 1 START 1
+CREATE SEQUENCE trainer_note_trainer_note_id_seq INCREMENT 1 START 1
 ;
