@@ -9,8 +9,7 @@ from fastapi.responses import HTMLResponse
 
 # Importem modelů zajistíme, že SQLAlchemy "vidí" všechny tabulky.
 # To je nezbytné, pokud chceme použít Base.metadata.create_all() pro inicializaci DB.
-from models import Base  # noqa: F401 – import potřebný pro side-effect (registrace tabulek)
-from db.session import engine
+from models import Base  # noqa: F401 – import potřebný pro side-effect (registrace tabulek v metadatech)
 
 # Vytvoření FastAPI aplikace s metadaty pro dokumentaci (Swagger UI na /docs).
 app = FastAPI(

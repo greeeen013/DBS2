@@ -37,8 +37,12 @@ export function createStore(initialState) {
 
   /**
    * Změní stav pomocí update funkce (reducer pattern).
-   * updateFunction dostane aktuální stav a vrátí nový – původní stav zůstane nezměněn.
-   * Po každé změně upozorní všechny odběratele.
+   *
+   * KONVENCE (není vynucena kódem): updateFunction musí vracet NOVÝ objekt,
+   * nikoliv mutovat a vracet původní referenci. Porušení konvence způsobí, že
+   * listeners nedostane nový stav a UI se nepřerenderuje správně.
+   * Správně: setState(s => ({ ...s, user: { ...s.user, role: 'MEMBER' } }))
+   * Špatně:  setState(s => { s.user.role = 'MEMBER'; return s; })
    *
    * @param {Function} updateFunction - Funkce s podpisem (currentState) => newState.
    */

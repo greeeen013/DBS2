@@ -12,7 +12,8 @@
 # Vazební tabulka reservation_payment je definována v reservation.py jako Table objekt
 # (bez ORM třídy) – tím zachováváme soulad se schématem DDL, které nemá PK na té tabulce.
 
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,9 +34,10 @@ class Payment(Base):
     )
 
     # --- Výše platby ---
-    # Numeric(10, 2) – přesná desetinná arithmetika, žádné zaokrouhlovací chyby.
-    # Nullable dle DDL (amount může být doplněna dodatečně).
-    amount: Mapped[float | None] = mapped_column(
+    # Decimal(10, 2) – přesná desetinná aritmetika.
+    # Mapped[Decimal | None] odpovídá návratovému typu SQLAlchemy Numeric (asdecimal=True je výchozí).
+    # Použití float by způsobovalo zaokrouhlovací chyby a typové nesrovnalosti.
+    amount: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),
         nullable=True,
         comment="Výše platby v korunách.",
@@ -43,11 +45,13 @@ class Payment(Base):
 
     # --- Datum a čas platby ---
     # timezone=True – DDL definuje 'timestamp with time zone'.
+    # datetime.now(timezone.utc) vrací timezone-aware datetime – odpovídá timezone=True sloupci.
+    # Použití datetime.utcnow() by vrátilo naive datetime a způsobovalo runtime chyby s psycopg2.
     date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        default=datetime.utcnow,
-        comment="Datum a čas provedení platby.",
+        default=lambda: datetime.now(timezone.utc),
+        comment="Datum a čas provedení platby (timezone-aware UTC).",
     )
 
     # --- Typ platby ---
