@@ -78,23 +78,119 @@ Logika aplikace je rozdělena na 8 klíčových infrastrukturních rolí v soula
 - **IR07 (Handlery):** Generických převod User-Inputs (např. kliknutí na potvrzovací tlačítko dobíječe) formou event bindů plně v režimu převodu UI -> dispatch action.
 - **IR08 (Autentizace):** Práce s JWT tokeny nebo ukládání state klíčů o identitě klienta z technického hlediska (login retention).
 
-## 5. Mapování odpovědností na členy týmu (Rozdělení - Výstup 1)
-> *Rozdělení doplňte vlastními jmény. Dokument Výstup 1 je oddělenou smluvní poviností, tato tabulka slouží jako stručná demonstrace odpovědností.*
+## 5. Rozdělení business odpovědností
+*Každý student odpovídá za definovanou část doménového modelu a její chování v čase (stavový automat), a to včetně implementace backendové aplikační logiky (API) a příslušného uživatelského rozhraní (UI) pro jemu svěřenou entitu.*
 
-### Člen týmu 1: Jan Pospíšil
-- **Business odpovědnost:** 
-  - Správa profilů (Entity Uživatel / GUEST / Člen), systém plateb, správa kreditu a automatický nákup/obnovování tarifů. (Entita: **Uživatel**)
-- **Infrastrukturní role:** 
-  - **IR01 (State Management):** Návrh globální struktury stavu, incializace a prevence nekonzistencí datového stromu.
-  - **IR03 (Asynchronní operace a side-effects):** Řešení komunikace se serverem, integrace platebních metod a dotazů do bankovních logů (přechod do stavů loading/error).
-  - **IR04 (Router):** Mapování a parsování url navigace, synchronizace stavu SPA v závislosti na změnách v historii prohlížeče.
-  - **IR08 (Autentizace a technická autorizace):** Práce s přihlašováním, ukládání tokenů/session dat a počáteční zhodnocení přístupnosti z technického hlediska.
+### Student A: [Jan Pospíšil](https://github.com/greeeen013)
+- **Business entita:** `Reservation` (Rezervace) a `Payment` (Platba)
+- **Odpovědnost:** Správa procesu přihlášení uživatele na vypsanou lekci, validace volných míst při vytváření rezervace, propojování rezervace s platbami (`ReservationPayment`), odepisování kreditů či zpracování JSON platebních detailů. Naprogramování API pro tyto procesy a tvorba UI formulářů pro platbu a detail rezervace.
 
-### Člen týmu 2: Jiří Černák
-- **Business odpovědnost:** 
-  - Životní cyklus tréninků (tvorba, rušení, limitace pro účastníky) a rezervační systém (validace nákupů a rezervací přes kredity/tarify). (Entity: **Trénink** a **Rezervace**)
-- **Infrastrukturní role:**
-  - **IR02 (Dispatcher):** Interpretace systémových a uživatelských akcí, volání business logiky (reducer) a centrální zápis do state managementu.
-  - **IR05 (Selektory):** Vystavení odvozených a složitých stavových dat (např. "které tréninky je povoleno registrovat" s ohledem na entitu probíhajících rezervací).
-  - **IR06 (View Composition):** Centrální renderovací systémy (komponenty), striktní rozdělení view vrstev skrz nativní `createElement` bez použití `innerHTML`.
-  - **IR07 (Handlery a vazba UI na akce):** Komplexní bindování událostí odesílajících záměry uživatelů (např. stisknutí tlačítka pro rezervaci -> dispatcher).
+#### Stavový automat: `ReservationStatus`
+- **Stavy:**
+  - `CREATED` (Vytvořena): Počáteční stav, uživatel zvolil termín a místo je dočasně blokováno.
+  - `CONFIRMED` / `PAID` (Potvrzena): Systém ověřil úspěšnou platbu a rezervaci závazně uložil.
+  - `CANCELLED` (Zrušena): Uživatel zrušil rezervaci před uplynutím storno limitu, nebo vypršel čas na zaplacení.
+  - `ATTENDED` / `COMPLETED` (Odbavená): Čas lekce uplynul a uživatel se jí zúčastnil (koncový stav).
+- **Pravidla přechodů:**
+  - Přechod do `PAID` striktně vyžaduje vytvoření validního záznamu v tabulce `Payment`.
+  - Při přechodu do `CANCELLED` se uvolňuje místo pro další členy (vysílá se akce pro úpravu kapacity).
+- **Invarianty (Pravidla, která nesmí být nikdy porušena):**
+  - Pokud je status rezervace `PAID`, musí k ní existovat navázaný platný záznam v tabulce `Payment`.
+  - Celková částka (nebo stržený kredit) v entitě `Payment` musí plně pokrývat cenu lekce (po případném odečtení `DiscountCode`).
+
+### Student B: [Jiří Černák](https://github.com/SlightlySaltedTeriyaki)
+- **Business entita:** `Scheduled_Lesson` (Rozvrhovaná lekce) a `Attendance` (Docházka)
+- **Odpovědnost:** Správa životního cyklu konkrétní lekce v rozvrhu (tvořené z `Lesson_Template`), hlídání naplněnosti kapacity (atribut `Registered_members`), přiřazování trenérů (`Employee`) a zápis poznámek k lekci. Naprogramování API pro tyto procesy a tvorba UI pro kalendář/rozvrh lekcí a formulář pro vytvoření/úpravu lekce.
+
+#### Stavový automat: `LessonStatus`
+- **Stavy:**
+  - `OPEN` (Otevřena): Lekce je zveřejněna v rozvrhu, lze na ni vytvářet rezervace.
+  - `FULL` (Plná kapacita): Počet rezervací dosáhl maxima, další rezervace nejsou možné.
+  - `IN_PROGRESS` (Probíhá): Čas lekce právě nastal, nelze již rušit rezervace.
+  - `COMPLETED` (Ukončena): Lekce skončila, otevírá se možnost zápisu docházky (`Attendance`).
+  - `CANCELLED` (Zrušena): Lekce byla trvale zrušena trenérem.
+- **Pravidla přechodů:**
+  - Přechod z `OPEN` do `FULL` se spouští na základě nárůstu počtu potvrzených rezervací.
+  - Pokud lekce přejde do `CANCELLED`, systém musí zneplatnit existující rezervace (akce pro Studenta A).
+- **Invarianty (Pravidla, která nesmí být nikdy porušena):**
+  - Hodnota `Registered_members` nesmí nikdy překročit definovanou maximální kapacitu lekce (`registered_members <= maximal_capacity`).
+  - Pokud je lekce ve stavu `CANCELLED`, žádná na ni navázaná rezervace nesmí zůstat ve stavu `CONFIRMED`.
+
+---
+
+## 6. Rozdělení infrastrukturních rolí
+
+### Student A: [Jan Pospíšil](https://github.com/greeeen013)
+- **IR01 – Správa stavu aplikace (State Management)**
+  - **Zajišťuje:** Návrh a implementaci centrálního datového úložiště (Store) pro celou aplikaci, zajištění immutability dat při úpravách rezervací nebo rozvrhu v paměti a oddělení doménových dat (z API) od těch technických (stav UI).
+  - **Nezahrnuje:** Přímé mutace stavu komponentami (UI), vykreslování obrazovky.
+- **IR03 – Asynchronní operace a side-effects**
+  - **Zajišťuje:** Komunikaci s backendem a společnou databází (REST API), řízení asynchronních procesů (čekání na potvrzení platby), centrální řízení loading stavů a zpracování chyb.
+  - **Nezahrnuje:** Rozhodování o validitě obchodních pravidel (řeší API).
+- **IR04 – Router / Navigační logika**
+  - **Zajišťuje:** Klientské routování pomocí History API, mapování URL (např. `/lesson/123`) na pohledy, synchronizaci adresy prohlížeče se stavem.
+  - **Nezahrnuje:** Sestavování DOM stromu daného pohledu (řeší IR06).
+- **IR08 – Autentizace a technická autorizace**
+  - **Zajišťuje:** Správu identity a rolí (`Account_Role`, `Employee_Role`), ukládání session tokenu a inicializaci autentizačního stavu aplikace, technickou kontrolu oprávnění v UI.
+  - **Nezahrnuje:** Skutečné bezpečnostní zamítnutí operace (to musí dělat API vrstva).
+
+### Student B: [Jiří Černák](https://github.com/SlightlySaltedTeriyaki)
+- **IR02 – Dispatcher / Interpretace akcí**
+  - **Zajišťuje:** Přijímání a zpracování akcí z UI, jejich rozdělování pro příslušné reducery (např. `ADD_RESERVATION`, `CANCEL_LESSON`) a vyvolání signálu ke změně centrálního stavu.
+  - **Nezahrnuje:** Přímou manipulaci s DOM stromem, definici business pravidel.
+- **IR05 – Selektory (Výběr dat ze stavu)**
+  - **Zajišťuje:** Tvorbu funkcí transformujících globální stav pro potřeby UI, filtraci dat (např. dostupné lekce pro aktuální týden), výpočet odvozených hodnot (zbývající volná kapacita).
+  - **Nezahrnuje:** Úpravy dat ve Store (read-only přístup).
+- **IR06 – Renderovací logika (View Composition)**
+  - **Zajišťuje:** Sestavování komponent a pohledů výhradně pomocí čistého DOM API, převod view-state na UI strukturu, podmíněné zobrazení částí UI (např. tlačítko "Zapsat docházku" jen u lekce `COMPLETED`).
+  - **Nezahrnuje:** Rozhodování o tom, co se má stát po interakci (to je delegováno na Handlery).
+- **IR07 – Handlery a vazba UI → akce**
+  - **Zajišťuje:** Připojování Event Listenerů na prvky v UI, převod uživatelských interakcí na volání akcí, odesílání sestavených objektů do Dispatcheru (IR02).
+  - **Nezahrnuje:** Přímé změny stavu z UI (aplikace striktně dodržuje Unidirectional Data Flow).
+
+---
+
+## 7. Rozhraní mezi částmi systému
+
+### Business rozhraní
+- **`Scheduled_Lesson` poskytuje operace:** `openLesson`, `cancelLesson`, `updateCapacity` (dle počtu rezervací), `closeLesson` / `markInProgress`.
+- **`Reservation` poskytuje operace:** `createReservation` (včetně iniciace platby), `cancelReservation`, `markAttended` (provázáno se zápisem docházky).
+- **`Reservation` reaguje na změny `Scheduled_Lesson`:**
+  - Pokud `lesson.status ≠ OPEN` → blokuje vytváření nových rezervací.
+  - Pokud `lesson.status = CANCELLED` → automaticky stornuje navázané `CONFIRMED` rezervace (a iniciuje proces vrácení kreditů).
+
+### Datové kontrakty
+- **Sdílené objekty:** `Scheduled_Lesson`, `Reservation`, `Payment`, `Attendance`.
+- **Vlastník dat:**
+  - `Reservation` a `Payment` – Student A
+  - `Scheduled_Lesson` a `Attendance` – Student B
+- **Kdo smí měnit stav:**
+  - Status `Reservation` a `Scheduled_Lesson` mění pouze jejich přechodové funkce.
+  - Centrální state mění výhradně dispatcher přes definované mutace.
+
+### Technická hranice (Tok dat)
+1. **UI** → Handlery (IR07) → Dispatcher (IR02)
+2. **Dispatcher** → Asynchronní vrstva (IR03)
+3. **Asynchronní vrstva** → API
+4. **API** vrací změněné entity (např. potvrzenou rezervaci)
+5. **Dispatcher** aktualizuje state (IR01)
+6. **Selektory** (IR05) připravují data pro UI
+7. **Render** (IR06) vykresluje aktuální view-state
+
+*Každá vrstva má jasného vlastníka a nesmí zasahovat do odpovědnosti jiné vrstvy.*
+
+---
+
+## 8. Způsob spolupráce a kontroly práce
+
+- **Sledování práce:**
+  - Každá infrastruktura i business část má vlastní issue na GitHubu.
+  - Každá business operace má vlastní test.
+- **Kontrola kvality:**
+  - Žádná business logika ve View.
+  - Žádná přímá mutace stavu mimo dispatcher.
+  - Žádná autorizace v UI (pouze na úrovni skrytí prvků, kontrola je na API).
+- **Řešení nesplnění odpovědnosti:**
+  - Eskalace na společné schůzce.
+  - Simulace chybějící části pomocí Mock dat (aby nedošlo k blokování vývoje).
+  - Přerozdělení práce po dohodě (v krajním případě informování vyučujícího).
