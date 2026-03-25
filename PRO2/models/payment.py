@@ -8,6 +8,9 @@
 #
 # Volitelný sloupec 'payment_details' (text v DDL) slouží pro metadata platby –
 # např. ID transakce z platební brány, JSON s rozpisem slev apod.
+#
+# Vazební tabulka reservation_payment je definována v reservation.py jako Table objekt
+# (bez ORM třídy) – tím zachováváme soulad se schématem DDL, které nemá PK na té tabulce.
 
 from datetime import datetime
 
@@ -98,11 +101,13 @@ class Payment(Base):
         comment="ID členství, ke kterému se platba váže (permanentka/tarif).",
     )
 
-    # --- Vztahy ---
-    # Platbu lze dohledat přes rezervaci (zpětný odkaz na ReservationPayment).
-    reservations: Mapped[list["ReservationPayment"]] = relationship(
-        "ReservationPayment",
-        back_populates="payment",
+    # --- Vztah k rezervacím přes junction tabulku ---
+    # secondary=reservation_payment_table – Table objekt bez vlastního ORM modelu.
+    # Tím zachováváme schéma DDL (žádný PK na junction tabulce).
+    reservations: Mapped[list["Reservation"]] = relationship(
+        "Reservation",
+        secondary="reservation_payment",  # SQLAlchemy si tabulku dohledá z metadat
+        back_populates="payments",
     )
 
     def __repr__(self) -> str:
@@ -113,6 +118,3 @@ class Payment(Base):
             f"member={self.member_id})>"
         )
 
-
-# Import ReservationPayment je potřeba pro zpětný vztah – lazy import kvůli kruhovým závislostem.
-from .reservation import ReservationPayment  # noqa: E402

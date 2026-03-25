@@ -7,13 +7,40 @@
 #                              CONFIRMED -> CANCELLED
 #
 # Sloupce odpovídají DDL.sql vygenerovanému z Enterprise Architectu.
+#
+# Poznámka k junction tabulce reservation_payment:
+# V DDL nemá tato tabulka primární klíč a oba FK sloupce jsou nullable.
+# SQLAlchemy proto nemapujeme jako třídu (ORM třída vyžaduje PK),
+# ale jako čistý Table objekt, který se použije jako 'secondary' v relationship.
+# Tím zajistíme, že create_all() nevytvoří odlišné schéma oproti DDL.sql.
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+
+# --- Vazební tabulka reservation_payment jako čistý Table objekt ---
+# Nepoužíváme ORM třídu – tabulka nemá PK (dle DDL) a slouží jen jako M:N bridge.
+# 'extend_existing=True' zajistí, že SQLAlchemy neprotestuje při opakovaném importu.
+reservation_payment_table = Table(
+    "reservation_payment",
+    Base.metadata,
+    Column(
+        "payment_id",
+        Integer,
+        ForeignKey("payment.payment_id", ondelete="NO ACTION"),
+        nullable=True,   # Zachováváme nullable dle DDL – neodchylujeme se od schématu.
+    ),
+    Column(
+        "reservation_id",
+        Integer,
+        ForeignKey("reservation.reservation_id", ondelete="NO ACTION"),
+        nullable=True,   # Zachováváme nullable dle DDL.
+    ),
+)
 
 
 class Reservation(Base):
@@ -96,13 +123,13 @@ class Reservation(Base):
         comment="ID naplánované lekce, na kterou se rezervace vztahuje.",
     )
 
-    # --- Vztahy (relationships) ---
-    # Přístup k propojeným platbám přes vazební tabulku reservation_payment.
-    # Lazy loading – SQLAlchemy dotáhne platby až při prvním přístupu k atributu.
-    payments: Mapped[list["ReservationPayment"]] = relationship(
-        "ReservationPayment",
-        back_populates="reservation",
-        cascade="all, delete-orphan",
+    # --- Vztah k platbám přes junction tabulku ---
+    # secondary=reservation_payment_table – SQLAlchemy použije Table objekt (bez vlastního ORM modelu).
+    # Lazy loading – platby se dotáhnou až při přístupu k atributu.
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment",
+        secondary=reservation_payment_table,
+        back_populates="reservations",
     )
 
     def __repr__(self) -> str:
@@ -114,40 +141,5 @@ class Reservation(Base):
         )
 
 
-class ReservationPayment(Base):
-    """Vazební tabulka 'reservation_payment' – propojení rezervace a platby.
-
-    Vztah M:N mezi Reservation a Payment.
-    Model je zde, protože jeho životní cyklus řídí Student A (owner entity Reservation).
-    """
-
-    __tablename__ = "reservation_payment"
-
-    # Kompozitní primární klíč není v DDL explicitně definován,
-    # tabulka má pouze dva nullable FK sloupce – zachováváme strukturu dle DDL.
-    payment_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("payment.payment_id", ondelete="NO ACTION"),
-        nullable=True,
-        primary_key=True,
-    )
-    reservation_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("reservation.reservation_id", ondelete="NO ACTION"),
-        nullable=True,
-        primary_key=True,
-    )
-
-    # Zpětné vztahy
-    reservation: Mapped["Reservation"] = relationship(
-        "Reservation",
-        back_populates="payments",
-    )
-    payment: Mapped["Payment"] = relationship(
-        "Payment",
-        back_populates="reservations",
-    )
-
-
-# Import Payment musí být na konci, aby nedošlo ke kruhovému importu.
+# Lazy import – Payment je definován v jiném modulu, importujeme až na konci.
 from .payment import Payment  # noqa: E402
