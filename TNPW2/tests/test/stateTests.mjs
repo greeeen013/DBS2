@@ -38,6 +38,6 @@ export function testInitialState() {
   // Aplikace se spouští ve stavu LOADING (čeká na inicializaci – whoAmI call).
   assert(state.ui.status === 'LOADING', 'ui.status je LOADING při startu aplikace');
 
-  // Žádná chybová zpráva při čistém start.
+  // Žádná chybová zpráva při čistém startu.
   assert(state.ui.errorMessage === null, 'ui.errorMessage je null (žádná chyba při startu)');
 }

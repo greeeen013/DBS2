@@ -47,9 +47,19 @@ export function createStore(initialState) {
    * @param {Function} updateFunction - Funkce s podpisem (currentState) => newState.
    */
   function setState(updateFunction) {
-    // Immutabilní přístup: vždy vytvoříme nový objekt, původní stav nepřepíšeme.
-    state = updateFunction(state);
+    // Immutabilní přístup je zde KONVENCE: očekáváme, že updateFunction vrátí nový objekt,
+    // ale store to nevynucuje. Pokud vrátíte stejnou referenci, pravděpodobně jste stav mutovali.
+    const previousState = state;
+    const newState = updateFunction(state);
 
+    if (newState === previousState) {
+      console.warn(
+        '[createStore] setState: updateFunction vrátila stejnou referenci stavu. ' +
+          'Očekává se, že vrátí NOVÝ objekt (immutabilní přístup).'
+      );
+    }
+
+    state = newState;
     // Upozorníme všechny odběratele (např. render funkce) o změně stavu.
     listeners.forEach((listener) => listener(state));
   }
