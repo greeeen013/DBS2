@@ -16,31 +16,12 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+from .tables import reservation_payment_table  # junction tabulka definována centrálně
 
-
-# --- Vazební tabulka reservation_payment jako čistý Table objekt ---
-# Nepoužíváme ORM třídu – tabulka nemá PK (dle DDL) a slouží jen jako M:N bridge.
-# 'extend_existing=True' zajistí, že SQLAlchemy neprotestuje při opakovaném importu.
-reservation_payment_table = Table(
-    "reservation_payment",
-    Base.metadata,
-    Column(
-        "payment_id",
-        Integer,
-        ForeignKey("payment.payment_id", ondelete="NO ACTION"),
-        nullable=True,   # Zachováváme nullable dle DDL – neodchylujeme se od schématu.
-    ),
-    Column(
-        "reservation_id",
-        Integer,
-        ForeignKey("reservation.reservation_id", ondelete="NO ACTION"),
-        nullable=True,   # Zachováváme nullable dle DDL.
-    ),
-)
 
 
 class Reservation(Base):

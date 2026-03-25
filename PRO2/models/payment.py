@@ -19,6 +19,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+from .tables import reservation_payment_table  # junction tabulka definována centrálně v tables.py
 
 
 class Payment(Base):
@@ -106,11 +107,11 @@ class Payment(Base):
     )
 
     # --- Vztah k rezervacím přes junction tabulku ---
-    # secondary=reservation_payment_table – Table objekt bez vlastního ORM modelu.
-    # Tím zachováváme schéma DDL (žádný PK na junction tabulce).
+    # Používáme přímý odkaz na Table objekt (ne string) – tabulka je vždy registrována
+    # v Base.metadata už při importu payment.py (díky importu tables.py výše).
     reservations: Mapped[list["Reservation"]] = relationship(
         "Reservation",
-        secondary="reservation_payment",  # SQLAlchemy si tabulku dohledá z metadat
+        secondary=reservation_payment_table,
         back_populates="payments",
     )
 
