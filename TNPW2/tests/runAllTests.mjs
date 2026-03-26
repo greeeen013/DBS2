@@ -3,12 +3,14 @@
 // (z adresáře TNPW2/)
 
 import { testInitialState } from './test/stateTests.mjs';
+import { testCreateStore } from './test/storeTests.mjs';
 
 console.log('==============================');
 console.log('  Spouštím testy IR01 (TNPW2)');
 console.log('==============================');
 
 testInitialState();
+testCreateStore();
 
 console.log('\n==============================');
 console.log('  Testy dokončeny');

@@ -68,10 +68,27 @@ export function createStore(initialState) {
    * Přihlásí funkci k odběru změn stavu.
    * Listener se zavolá pokaždé, když setState změní stav.
    *
+   * Vrací funkci pro odhlášení (unsubscribe) – důležité volat při zničení komponenty
+   * nebo přepnutí pohledu, aby nedocházelo k hromadění listenerů a vícenásobným renderům.
+   *
+   * Použití:
+   *   const unsubscribe = store.subscribe(render);
+   *   // ...při opuštění pohledu:
+   *   unsubscribe();
+   *
    * @param {Function} listener - Callback volaný s novým stavem jako argumentem.
+   * @returns {Function} Funkce pro odhlášení listeneru.
    */
   function subscribe(listener) {
     listeners.push(listener);
+
+    // Vracíme unsubscribe funkci – odstraní listener z pole (filtrací).
+    return function unsubscribe() {
+      const index = listeners.indexOf(listener);
+      if (index !== -1) {
+        listeners.splice(index, 1);
+      }
+    };
   }
 
   // Veřejné API store – vše ostatní je skryto v closure.
