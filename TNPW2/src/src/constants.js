@@ -1,0 +1,15 @@
+// Konstanty pro typy akcí a názvů pohledů v MMA aplikaci.
+// Vzor přejat ze prepare/constants.js – každá akce/pohled má svůj string identifikátor.
+
+// --- Pohledy (mode v UI stavu) ---
+export const RESERVATION_LIST = 'RESERVATION_LIST';
+export const PAYMENT_VIEW     = 'PAYMENT_VIEW';
+
+// --- Akce dispatcheru ---
+export const ENTER_RESERVATION_LIST = 'ENTER_RESERVATION_LIST';
+export const ENTER_PAYMENT_VIEW     = 'ENTER_PAYMENT_VIEW';
+export const CONFIRM_RESERVATION    = 'CONFIRM_RESERVATION';
+export const CANCEL_RESERVATION     = 'CANCEL_RESERVATION';
+export const CREATE_PAYMENT         = 'CREATE_PAYMENT';
+export const RECOVER_FROM_ERROR     = 'RECOVER_FROM_ERROR';
+export const CLEAR_NOTIFICATION     = 'CLEAR_NOTIFICATION';
