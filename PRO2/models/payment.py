@@ -15,7 +15,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -82,11 +82,10 @@ class Payment(Base):
     )
 
     # --- Cizí klíče ---
-    # FK na členský slevový kód (nepovinný – platba nemusí mít slevu).
-    # SmallInteger odpovídá typu smallint v DDL (discount_code.discount_code_id).
+    # FK na slevový kód – ORM model pro discount_code zatím neexistuje,
+    # FK constraint vynecháváme; sloupec mapujeme jako plain integer.
     discount_code_id: Mapped[int | None] = mapped_column(
-        SmallInteger,
-        ForeignKey("discount_code.discount_code_id", ondelete="NO ACTION"),
+        Integer,
         nullable=True,
         comment="ID slevového kódu uplatněného při platbě.",
     )
@@ -99,10 +98,9 @@ class Payment(Base):
         comment="ID člena, který platbu provedl.",
     )
 
-    # FK na členství – platba za permanentku/tarif (nepovinný, FK na membership).
+    # FK na členství – ORM model pro membership zatím neexistuje, plain integer.
     membership_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("membership.membership_id", ondelete="NO ACTION"),
         nullable=True,
         comment="ID členství, ke kterému se platba váže (permanentka/tarif).",
     )

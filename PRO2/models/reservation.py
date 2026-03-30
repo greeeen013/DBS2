@@ -14,7 +14,7 @@
 # ale jako čistý Table objekt, který se použije jako 'secondary' v relationship.
 # Tím zajistíme, že create_all() nevytvoří odlišné schéma oproti DDL.sql.
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -48,18 +48,18 @@ class Reservation(Base):
     )
 
     # --- Časové razítko vytvoření ---
-    # Serverový čas vložení, ukládáme jako aware-free datetime (timezone=False dle DDL).
+    # Timezone-aware UTC datetime – dle CLAUDE.md pravidla "timestampy vždy timezone-aware".
     timestamp_creation: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         comment="Čas vzniku rezervace (UTC).",
     )
 
     # --- Časové razítko poslední změny stavu ---
     # Nullable – při vytvoření je NULL, vyplní se při každé změně stavu.
     timestamp_change: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=True,
         comment="Čas poslední změny stavu rezervace.",
     )
@@ -96,10 +96,9 @@ class Reservation(Base):
         comment="ID člena, který rezervaci provedl.",
     )
 
-    # FK na tabulku 'lesson_schedule' – konkrétní naplánovaná lekce.
+    # FK na tabulku 'lesson_schedule' – ORM model zatím neexistuje, plain integer.
     lesson_schedule_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("lesson_schedule.lesson_schedule_id", ondelete="NO ACTION"),
         nullable=False,
         comment="ID naplánované lekce, na kterou se rezervace vztahuje.",
     )
