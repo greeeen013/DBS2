@@ -19,6 +19,8 @@ from sqlalchemy.pool import StaticPool
 # Zajistíme, že Python najde moduly z PRO2/ i při spuštění testů z jiného adresáře.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from auth.jwt import vytvor_token  # noqa: E402 – musí být po sys.path.insert
+
 TESTOVACI_DB_URL = "sqlite:///:memory:"
 
 # StaticPool – všechna připojení používají stejné fyzické SQLite spojení.
@@ -118,3 +120,24 @@ def clen_bez_kreditů(client):
     clen_id = clen.member_id
     db.close()
     return clen_id
+
+
+@pytest.fixture
+def auth_headers(clen_s_kredity):
+    """Bearer token pro přihlášeného člena (role=member)."""
+    token = vytvor_token(member_id=clen_s_kredity, role="member")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_headers(clen_s_kredity):
+    """Bearer token s rolí admin – potřebný pro schválení platby (COMPLETED)."""
+    token = vytvor_token(member_id=clen_s_kredity, role="admin")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def auth_headers_bez_kreditů(clen_bez_kreditů):
+    """Bearer token pro člena bez kreditů."""
+    token = vytvor_token(member_id=clen_bez_kreditů, role="member")
+    return {"Authorization": f"Bearer {token}"}
