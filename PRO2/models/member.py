@@ -7,6 +7,8 @@
 # Poznámka k FK v jiných modelech:
 # Reservation.member_id a Payment.member_id odkazují na tuto tabulku.
 
+from typing import Optional
+
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,6 +39,27 @@ class Member(Base):
         String(100),
         nullable=False,
         comment="Příjmení člena.",
+    )
+
+    # --- Autentizace ---
+    email: Mapped[Optional[str]] = mapped_column(
+        String(300),
+        nullable=True,
+        unique=True,
+        comment="E-mail pro přihlášení (unikátní).",
+    )
+
+    password_hash: Mapped[Optional[str]] = mapped_column(
+        String(200),
+        nullable=True,
+        comment="Bcrypt hash hesla.",
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="member",
+        comment="Role: member | trainer | admin.",
     )
 
     # --- Kreditový zůstatek ---
