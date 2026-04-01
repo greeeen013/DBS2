@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from auth.dependencies import CurrentUser, get_current_member
 from db.dependencies import get_db
 from models.member import Member
 from models.reservation import Reservation
@@ -76,6 +77,7 @@ def zmen_stav_rezervace(
     rezervace_id: int,
     data: ReservationStatusUpdate,
     db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
 ):
     """
     Změní stav rezervace a provede odpovídající kreditovou operaci.
@@ -90,6 +92,9 @@ def zmen_stav_rezervace(
     rezervace = db.get(Reservation, rezervace_id)
     if not rezervace:
         raise HTTPException(status_code=404, detail="Rezervace nenalezena")
+
+    if current.role != "admin" and current.member_id != rezervace.member_id:
+        raise HTTPException(status_code=403, detail="Přístup zamítnut")
 
     novy_stav = data.status.upper()
     povolene = POVOLENE_PRECHODY.get(rezervace.status, [])

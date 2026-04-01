@@ -11,6 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from auth.dependencies import CurrentUser, get_current_member, require_admin
 from db.dependencies import get_db
 from models.member import Member
 from models.payment import Payment
@@ -28,13 +29,20 @@ POVOLENE_PRECHODY: dict[str, list[str]] = {
 
 
 @router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
-def vytvor_platbu(data: PaymentCreate, db: Session = Depends(get_db)):
+def vytvor_platbu(
+    data: PaymentCreate,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
     """
     Vytvoří novou platbu ve stavu PENDING.
 
     Kredity se přičítají až po potvrzení platby (COMPLETED),
     ne při jejím vytvoření – kvůli možnému selhání transakce.
     """
+    if current.role != "admin" and current.member_id != data.member_id:
+        raise HTTPException(status_code=403, detail="Přístup zamítnut")
+
     nova_platba = Payment(
         amount=data.amount,
         payment_type=data.payment_type,
@@ -65,6 +73,7 @@ def zmen_stav_platby(
     platba_id: int,
     data: PaymentStatusUpdate,
     db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
 ):
     """
     Změní stav platby a provede odpovídající kreditovou operaci.
@@ -77,7 +86,15 @@ def zmen_stav_platby(
     if not platba:
         raise HTTPException(status_code=404, detail="Platba nenalezena")
 
+    if current.role != "admin" and current.member_id != platba.member_id:
+        raise HTTPException(status_code=403, detail="Přístup zamítnut")
+
     novy_stav = data.status.upper()
+
+    # Přechod do COMPLETED smí provést jen admin (platební operátor).
+    # Člen nesmí sám sobě schvalovat platby a tím získávat neomezené kredity.
+    if novy_stav == "COMPLETED" and current.role != "admin":
+        raise HTTPException(status_code=403, detail="Schválení platby vyžaduje roli admin")
     povolene = POVOLENE_PRECHODY.get(platba.status, [])
 
     if novy_stav not in povolene:
