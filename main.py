@@ -143,7 +143,7 @@ MENU = [
     ("Exportovat Docker images",             docker_export),
     ("Importovat Docker images",             docker_import),
     ("Spustit JavaScript testy (IR01)",      run_js_tests),
-    ("Ukončit všechny spuštěné procesy",     stop_all),
+    ("Ukončit všechna otevřená okna serverů", stop_all),
 ]
 
 
