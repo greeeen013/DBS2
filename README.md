@@ -39,5 +39,42 @@ Tento projekt tvoří **komplexní webovou aplikaci pro sportovní klub** (konkr
    - **Recepce** - Možnost spravovat návštěvníky, ale bez pokročilých modifikací systému (cenotvorba apod.).
    - **Admin** - Nejvyšší role pro kompletní správu všech částí klubu a kontrolních mechanizmů.
 
+## Spuštění projektu
+
+### Backend (FastAPI)
+```bash
+cd PRO2/
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+API běží na http://localhost:8000, Swagger UI na http://localhost:8000/docs.
+
+### Frontend (SPA)
+```bash
+cd TNPW2/src/
+python -m http.server 8001
+```
+Aplikace běží na http://localhost:8001.
+
+### Docker image – export a import
+```bash
+# Export (uložení image do souboru)
+docker save postgres:16 -o postgres16.tar
+docker save adminer -o adminer.tar
+
+# Import (načtení image ze souboru na jiném stroji)
+docker load -i postgres16.tar
+docker load -i adminer.tar
+```
+Po importu spusť databázi standardně přes `docker compose up -d` v adresáři `DBS2/`.
+
+### JavaScript testy (IR01 – TNPW2)
+```bash
+cd TNPW2/
+node tests/runAllTests.mjs
+```
+
+---
+
 ## Co projekt neobsahuje
 Je nutné zmínit, že se v tomto akademickém projektu soustředíme primárně na databázovou/webovou část a správu logiky. Neřešíme a na implementaci zde nebudeme zařazovat věci jako vyčítání lokálního hardwaru - aplikace sloužící recepcím (lokální .exe či desktopový program komunikující se čtečkami NFC a turnikety pro odpípávání vstupu). Tato klientská odbavovací aplikace bude realizovaná v rámci jiného, odděleného projektu. V návrhu DB s těmito událostmi již ale budeme samozřejmě počítat.
