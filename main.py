@@ -6,6 +6,7 @@ Spusť z kořenového adresáře projektu: python main.py
 import os
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PRO2 = os.path.join(ROOT, "PRO2")
@@ -27,11 +28,21 @@ def header(text: str) -> None:
 
 
 def _open_window(title: str, cwd: str, cmd: list[str]) -> subprocess.Popen:
-    """Otevře nové CMD okno s daným titulkem a příkazem (Windows)."""
+    """Zapíše dočasný .bat soubor a otevře ho v novém CMD okně."""
     inner = " ".join(f'"{c}"' if " " in c else c for c in cmd)
-    full_cmd = f'title {title} && cd /d "{cwd}" && {inner}'
+    bat_lines = [
+        "@echo off",
+        f"title {title}",
+        f'cd /d "{cwd}"',
+        inner,
+    ]
+    fd, bat_path = tempfile.mkstemp(suffix=".bat", prefix="pretorian_")
+    os.close(fd)
+    with open(bat_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(bat_lines) + "\n")
+
     proc = subprocess.Popen(
-        ["cmd", "/k", full_cmd],
+        ["cmd", "/k", bat_path],
         creationflags=subprocess.CREATE_NEW_CONSOLE,
     )
     _procs[proc.pid] = title
@@ -39,13 +50,13 @@ def _open_window(title: str, cwd: str, cmd: list[str]) -> subprocess.Popen:
 
 
 def run_backend_window() -> None:
-    proc = _open_window("Pretorian – Backend :8000", PRO2, BACKEND_CMD)
+    proc = _open_window("Pretorian - Backend :8000", PRO2, BACKEND_CMD)
     print(f"  Otevřeno okno '{_procs[proc.pid]}'  (PID {proc.pid})")
     print("  http://localhost:8000  |  Swagger: http://localhost:8000/docs")
 
 
 def run_frontend_window() -> None:
-    proc = _open_window("Pretorian – Frontend :8001", TNPW2_SRC, FRONTEND_CMD)
+    proc = _open_window("Pretorian - Frontend :8001", TNPW2_SRC, FRONTEND_CMD)
     print(f"  Otevřeno okno '{_procs[proc.pid]}'  (PID {proc.pid})")
     print("  http://localhost:8001")
 
