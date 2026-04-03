@@ -16,7 +16,8 @@ DBS2 = os.path.join(ROOT, "DBS2")
 BACKEND_CMD = [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 FRONTEND_CMD = [sys.executable, "-m", "http.server", "8001"]
 
-_procs: list[subprocess.Popen] = []
+# pid → popis (pro výpis v menu)
+_procs: dict[int, str] = {}
 
 
 def header(text: str) -> None:
@@ -25,40 +26,49 @@ def header(text: str) -> None:
     print(f"{'='*50}")
 
 
-def run_backend_bg() -> subprocess.Popen:
-    proc = subprocess.Popen(BACKEND_CMD, cwd=PRO2)
-    _procs.append(proc)
-    print("  Backend spuštěn na http://localhost:8000  (PID {})".format(proc.pid))
-    print("  Swagger UI:  http://localhost:8000/docs")
+def _open_window(title: str, cwd: str, cmd: list[str]) -> subprocess.Popen:
+    """Otevře nové CMD okno s daným titulkem a příkazem (Windows)."""
+    inner = " ".join(f'"{c}"' if " " in c else c for c in cmd)
+    full_cmd = f'title {title} && cd /d "{cwd}" && {inner}'
+    proc = subprocess.Popen(
+        ["cmd", "/k", full_cmd],
+        creationflags=subprocess.CREATE_NEW_CONSOLE,
+    )
+    _procs[proc.pid] = title
     return proc
 
 
-def run_frontend_bg() -> subprocess.Popen:
-    proc = subprocess.Popen(FRONTEND_CMD, cwd=TNPW2_SRC)
-    _procs.append(proc)
-    print("  Frontend spuštěn na http://localhost:8001  (PID {})".format(proc.pid))
-    return proc
+def run_backend_window() -> None:
+    proc = _open_window("Pretorian – Backend :8000", PRO2, BACKEND_CMD)
+    print(f"  Otevřeno okno '{_procs[proc.pid]}'  (PID {proc.pid})")
+    print("  http://localhost:8000  |  Swagger: http://localhost:8000/docs")
+
+
+def run_frontend_window() -> None:
+    proc = _open_window("Pretorian – Frontend :8001", TNPW2_SRC, FRONTEND_CMD)
+    print(f"  Otevřeno okno '{_procs[proc.pid]}'  (PID {proc.pid})")
+    print("  http://localhost:8001")
 
 
 def start_backend() -> None:
     header("Spouštím Backend (FastAPI)")
-    run_backend_bg()
-    print("\n  Stiskni Enter pro návrat do menu (server poběží na pozadí)...")
+    run_backend_window()
+    print("\n  Okno je otevřeno. Enter pro návrat do menu...")
     input()
 
 
 def start_frontend() -> None:
     header("Spouštím Frontend (HTTP server)")
-    run_frontend_bg()
-    print("\n  Stiskni Enter pro návrat do menu (server poběží na pozadí)...")
+    run_frontend_window()
+    print("\n  Okno je otevřeno. Enter pro návrat do menu...")
     input()
 
 
 def start_both() -> None:
-    header("Spouštím Backend + Frontend na pozadí")
-    run_backend_bg()
-    run_frontend_bg()
-    print("\n  Oba servery běží. Stiskni Enter pro návrat do menu...")
+    header("Spouštím Backend + Frontend")
+    run_backend_window()
+    run_frontend_window()
+    print("\n  Obě okna jsou otevřena. Enter pro návrat do menu...")
     input()
 
 
@@ -66,9 +76,16 @@ def stop_all() -> None:
     if not _procs:
         print("  Žádné procesy neběží.")
         return
-    for p in _procs:
-        p.terminate()
-        print(f"  Ukončen PID {p.pid}")
+    for pid, title in list(_procs.items()):
+        # taskkill /T ukončí i dceřiné procesy (uvicorn, http.server)
+        result = subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(pid)],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            print(f"  ✓ Ukončeno: {title}  (PID {pid})")
+        else:
+            print(f"  ~ Proces již neběží: {title}  (PID {pid})")
     _procs.clear()
 
 
