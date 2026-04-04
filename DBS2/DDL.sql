@@ -218,6 +218,8 @@ CREATE TABLE "Member"
 	"Phone_number" varchar(50) NULL,
 	"Photo" text NULL,
 	"Surname" varchar(100) NOT NULL,
+	"Password_hash" varchar(200) NULL,
+	"Role" varchar(50) NOT NULL DEFAULT 'member',
 	"Member_ID" integer NOT NULL   DEFAULT NEXTVAL(('"member_member_id_seq"'::text)::regclass),
 	"Account_ID" integer NULL
 )
