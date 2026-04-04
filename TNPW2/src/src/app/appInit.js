@@ -12,6 +12,14 @@ import * as CONST from '../constants.js';
 export async function appInit({ store, api }) {
   const memberId = store.getState().auth.memberId;
 
+  if (!memberId) {
+    store.setState((state) => ({
+      ...state,
+      ui: { ...state.ui, status: STATUS.RDY, mode: CONST.AUTH_VIEW, errorMessage: null },
+    }));
+    return;
+  }
+
   // Signalizace načítání – frontend zobrazí LoadingView
   store.setState((state) => ({
     ...state,

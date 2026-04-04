@@ -26,6 +26,11 @@ export async function apiFetch(path, options = {}) {
     },
   };
 
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
   // Pokud body není string, serializujeme ho jako JSON
   if (config.body && typeof config.body !== 'string') {
     config.body = JSON.stringify(config.body);

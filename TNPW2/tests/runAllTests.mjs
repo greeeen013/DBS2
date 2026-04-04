@@ -4,13 +4,15 @@
 
 import { testInitialState } from './test/stateTests.mjs';
 import { testCreateStore } from './test/storeTests.mjs';
+import { testRouter } from './test/routerTests.mjs';
 
 console.log('==============================');
-console.log('  Spouštím testy IR01 (TNPW2)');
+console.log('  Spouštím testy TNPW2');
 console.log('==============================');
 
 testInitialState();
 testCreateStore();
+testRouter();
 
 console.log('\n==============================');
 console.log('  Testy dokončeny');

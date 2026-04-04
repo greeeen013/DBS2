@@ -10,6 +10,10 @@ import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
 export function createInitialState() {
+  const memberId = localStorage.getItem('memberId');
+  const memberName = localStorage.getItem('memberName');
+  const hasToken = !!localStorage.getItem('token');
+
   return {
     // Rezervace a platby přihlášeného člena
     reservations: [],
@@ -18,16 +22,22 @@ export function createInitialState() {
     // Kreditový zůstatek – načítá se při inicializaci z API
     creditBalance: null,
 
-    // Přihlášený člen – zatím bez autentizace, member_id=1 pro demo
-    auth: {
-      memberId: 1,
-      name: 'Demo člen',
+    // IR04: Kombinovaná historie pro ProfileView (rezervace + platby)
+    history: {
+      reservations: [],
+      payments: [],
     },
 
-    // UI stav – totožná struktura jako v prepare/ pro konzistenci
+    // Přihlášený člen
+    auth: {
+      memberId: memberId ? parseInt(memberId, 10) : null,
+      name: memberName || null,
+    },
+
+    // UI stav
     ui: {
-      mode: CONST.RESERVATION_LIST,
-      status: STATUS.LOAD,
+      mode: hasToken ? CONST.RESERVATION_LIST : CONST.AUTH_VIEW,
+      status: hasToken ? STATUS.LOAD : STATUS.RDY,
       errorMessage: null,
       notification: null,  // { type: 'SUCCESS'|'WARNING', message }
     },
