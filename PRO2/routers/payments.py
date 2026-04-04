@@ -58,8 +58,14 @@ def vytvor_platbu(
 
 
 @router.get("/member/{member_id}", response_model=list[PaymentResponse])
-def platby_clena(member_id: int, db: Session = Depends(get_db)):
+def platby_clena(
+    member_id: int,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
     """Vrátí historii plateb pro daného člena, seřazenou od nejnovější."""
+    if current.role != "admin" and current.member_id != member_id:
+        raise HTTPException(status_code=403, detail="Přístup zamítnut")
     return (
         db.query(Payment)
         .filter(Payment.member_id == member_id)

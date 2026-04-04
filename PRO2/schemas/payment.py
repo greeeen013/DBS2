@@ -5,6 +5,7 @@
 #   PENDING -> FAILED    (žádná změna kreditů)
 #   COMPLETED -> REFUNDED (odebere kredity)
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -34,5 +35,6 @@ class PaymentResponse(BaseModel):
     status: Optional[str] = None
     payment_type: Optional[str] = None
     member_id: Optional[int] = None
+    date: Optional[datetime] = None  # IR04: pro řazení v historii
 
     model_config = ConfigDict(from_attributes=True)
