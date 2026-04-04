@@ -8,6 +8,8 @@ import { LoadingView } from './views/LoadingView.js';
 import { ErrorView } from './views/ErrorView.js';
 import { ReservationListView } from './views/ReservationListView.js';
 import { PaymentView } from './views/PaymentView.js';
+import { ProfileView } from './views/ProfileView.js';
+import { renderAuthView } from './views/AuthView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import * as CONST from '../constants.js';
@@ -41,11 +43,23 @@ export function render(root, state, dispatch) {
       view = PaymentView({ viewState, dispatch });
       break;
 
+    case CONST.PROFILE_VIEW:
+      view = ProfileView({ viewState, dispatch });
+      break;
+    
+    case CONST.AUTH_VIEW:
+      renderAuthView(root, state, dispatch);
+      // Notifikace pro auth view (renderAuthView dělá root.appendChild uvnitř pro AuthView container)
+      // Takže view nepotřebujeme nastavovat
+      break;
+
     default:
       view = document.createTextNode(`Neznámý pohled: ${viewState.type}`);
   }
 
-  root.appendChild(view);
+  if (view) {
+    root.appendChild(view);
+  }
 
   // Notifikace – zobrazí se na konci každého pohledu (jako v prepare/render.js)
   const { notification } = state.ui;
