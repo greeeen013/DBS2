@@ -39,13 +39,6 @@ export function ReservationListView({ viewState, dispatch }) {
   );
   container.appendChild(btnProfil);
 
-  const btnLogout = addActionButton(
-    () => dispatch({ type: CONST.LOGOUT }),
-    'Odhlásit',
-    'button--danger mb-15',
-  );
-  container.appendChild(btnLogout);
-
   // Seznam rezervací
   if (!rezervace || rezervace.length === 0) {
     container.appendChild(createText(['Žádné rezervace.'], 'text-muted'));
