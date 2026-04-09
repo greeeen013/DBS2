@@ -41,7 +41,9 @@ export async function apiFetch(path, options = {}) {
   if (!response.ok) {
     // FastAPI vrací chybové zprávy jako { detail: "..." }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail ?? `Chyba serveru: ${response.status}`);
+    const err = new Error(errorData.detail ?? `Chyba serveru: ${response.status}`);
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();

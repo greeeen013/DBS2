@@ -12,13 +12,35 @@ import { ProfileView } from './views/ProfileView.js';
 import { renderAuthView } from './views/AuthView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
+import { createElement } from './builder/createElement.js';
+import { addActionButton } from './builder/components/button.js';
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
+
+function createUserHeader(name, dispatch) {
+  const nav = createElement('nav', { className: 'navbar navbar-dark bg-dark px-3 py-2' });
+  const inner = createElement('div', { className: 'd-flex align-items-center ms-auto gap-3' });
+  const nameSpan = createElement('span', { className: 'text-white fw-semibold' }, [name ?? '']);
+  const btnLogout = addActionButton(
+    () => dispatch({ type: CONST.LOGOUT }),
+    'Odhlásit',
+    'button--danger btn-sm',
+  );
+  inner.appendChild(nameSpan);
+  inner.appendChild(btnLogout);
+  nav.appendChild(inner);
+  return nav;
+}
 
 export function render(root, state, dispatch) {
   root.replaceChildren();
 
   const viewState = selectViewState(state);
+
+  // Uživatelská lišta – zobrazí se na všech pohledech kromě přihlašovací stránky
+  if (state.auth.memberId && viewState.type !== CONST.AUTH_VIEW) {
+    root.appendChild(createUserHeader(state.auth.name, dispatch));
+  }
 
   let view;
   switch (viewState.type) {
