@@ -40,13 +40,13 @@ def vytvor_platbu(
     Kredity se přičítají až po potvrzení platby (COMPLETED),
     ne při jejím vytvoření – kvůli možnému selhání transakce.
     """
-    if current.role != "admin" and current.member_id != data.member_id:
-        raise HTTPException(status_code=403, detail="Přístup zamítnut")
-
+    # Non-admins can only create payments for themselves – identity comes from
+    # the JWT, not from the request body, to prevent any future auth-check regression.
+    member_id = data.member_id if current.role == "admin" else current.member_id
     nova_platba = Payment(
         amount=data.amount,
         payment_type=data.payment_type,
-        member_id=data.member_id,
+        member_id=member_id,
         membership_id=data.membership_id,
         status="PENDING",
         date=datetime.now(timezone.utc),

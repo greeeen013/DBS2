@@ -50,10 +50,11 @@ def vytvor_rezervaci(
     Kredit se při vytvoření neodečítá – odečítá se až při potvrzení (CONFIRMED),
     aby neblokoval kredity pro rezervace, které ještě nebyly potvrzeny.
     """
-    if current.role != "admin" and current.member_id != data.member_id:
-        raise HTTPException(status_code=403, detail="Přístup zamítnut")
+    # Non-admins can only create reservations for themselves – identity comes from
+    # the JWT, not from the request body, to prevent any future auth-check regression.
+    member_id = data.member_id if current.role == "admin" else current.member_id
     nova_rezervace = Reservation(
-        member_id=data.member_id,
+        member_id=member_id,
         lesson_schedule_id=data.lesson_schedule_id,
         note=data.note,
         guest_name=data.guest_name,
