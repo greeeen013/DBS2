@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict NLcKGTwHqhQ1QmabnyTS6caG28BfSgYeEUevXAodsw9tQFtJgnIqHsPK0POxpG9
+\restrict hDvN6TbR8JJuRFNgkvxrJjrFltlut39rrcFhxFH00y9OZYanXdGkRjZD1mS6sT8
 
 -- Dumped from database version 16.13 (Debian 16.13-1.pgdg13+1)
 -- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg13+1)
@@ -622,7 +622,7 @@ COPY public.lesson_type_tariff (tariff_id, lesson_type_id) FROM stdin;
 
 COPY public.member (credit_balance, email, entry_token, first_attendance, is_active, name, phone_number, photo, surname, member_id, account_id, password_hash, role) FROM stdin;
 0	asd@dsa.cz	834fded3-3e1d-401e-8ae6-25d8d005b0d2	\N	\N	asd	\N	\N	dsa	2	\N	$2b$12$HZKdNSSlrSeomXPi9HNnZu/IG3JHDrWifzBbfAIenp46oUw5t6/e2	member
-1400	green013@post.cz	dc7a664b-750a-42e2-b37b-9673947c9b69	\N	\N	Jan	\N	\N	Pospíšil	1	\N	$2b$12$CarmULOOHERWRUQqVfBx/.K9eJZmCJsmRmPc0hAavyuh5kPvm47am	admin
+1400	green013@post.cz	dc7a664b-750a-42e2-b37b-9673947c9b69	\N	\N	Jan	\N	\N	Pospíšil	1	\N	$2b$12$k0C1jMNdjE8IpooSilUKa.EXknzyaO89bn6BZoVWelztrLlK0DD7G	admin
 \.
 
 
@@ -1105,5 +1105,5 @@ ALTER TABLE ONLY public.trainer_note
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NLcKGTwHqhQ1QmabnyTS6caG28BfSgYeEUevXAodsw9tQFtJgnIqHsPK0POxpG9
+\unrestrict hDvN6TbR8JJuRFNgkvxrJjrFltlut39rrcFhxFH00y9OZYanXdGkRjZD1mS6sT8
 
