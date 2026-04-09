@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import webbrowser
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PRO2 = os.path.join(ROOT, "PRO2")
@@ -122,9 +123,15 @@ def start_frontend() -> None:
 
 def start_both() -> None:
     header("Spouštím Backend + Frontend")
+    if not ensure_docker():
+        input("  Stiskni Enter...")
+        return
     run_backend_window()
     run_frontend_window()
-    print("\n  Obě okna jsou otevřena. Enter pro návrat do menu...")
+    print("\n  Otevírám prohlížeč na http://localhost:8001 ...")
+    time.sleep(1)
+    webbrowser.open("http://localhost:8001")
+    print("  Obě okna jsou otevřena. Enter pro návrat do menu...")
     input()
 
 
@@ -216,7 +223,7 @@ def menu() -> None:
             print(f"  {i}. {label}")
         print("  0. Ukončit")
         print()
-        choice = input("  Volba: ").strip()
+        choice = input("  Volba [Enter = 3]: ").strip() or "3"
         if choice == "0":
             stop_all()
             print("  Nashledanou!")
