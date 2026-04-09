@@ -1,8 +1,52 @@
 import os
+import subprocess
+import time
 import psycopg2
 from dotenv import load_dotenv
 
+_DOCKER_DESKTOP_PATHS = [
+    r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Docker\Docker\Docker Desktop.exe"),
+]
+
+
+def _docker_responsive() -> bool:
+    try:
+        r = subprocess.run(["docker", "info"], capture_output=True, timeout=5)
+        return r.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
+def ensure_docker() -> bool:
+    if _docker_responsive():
+        return True
+
+    print("⏳ Docker není spuštěn. Hledám Docker Desktop...")
+    exe = next((p for p in _DOCKER_DESKTOP_PATHS if os.path.exists(p)), None)
+    if exe is None:
+        print("❌ Docker Desktop nenalezen. Nainstaluj ho a zkus znovu.")
+        return False
+
+    print(f"🚀 Spouštím: {exe}")
+    subprocess.Popen([exe])
+
+    print("⏳ Čekám na Docker", end="", flush=True)
+    for _ in range(60):
+        time.sleep(2)
+        if _docker_responsive():
+            print(" ✅")
+            return True
+        print(".", end="", flush=True)
+
+    print("\n❌ Docker se nepodařilo spustit do 120 s.")
+    return False
+
+
 if __name__ == "__main__":
+    if not ensure_docker():
+        raise SystemExit(1)
+
     print("⏳ Připojování do PostgreSQL v Dockeru...")
     load_dotenv()
 
