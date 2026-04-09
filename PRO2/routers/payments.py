@@ -40,13 +40,13 @@ def vytvor_platbu(
     Kredity se přičítají až po potvrzení platby (COMPLETED),
     ne při jejím vytvoření – kvůli možnému selhání transakce.
     """
-    if current.role != "admin" and current.member_id != data.member_id:
-        raise HTTPException(status_code=403, detail="Přístup zamítnut")
-
+    # Non-admins can only create payments for themselves – identity comes from
+    # the JWT, not from the request body, to prevent any future auth-check regression.
+    member_id = data.member_id if current.role == "admin" else current.member_id
     nova_platba = Payment(
         amount=data.amount,
         payment_type=data.payment_type,
-        member_id=data.member_id,
+        member_id=member_id,
         membership_id=data.membership_id,
         status="PENDING",
         date=datetime.now(timezone.utc),
@@ -58,8 +58,14 @@ def vytvor_platbu(
 
 
 @router.get("/member/{member_id}", response_model=list[PaymentResponse])
-def platby_clena(member_id: int, db: Session = Depends(get_db)):
+def platby_clena(
+    member_id: int,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
     """Vrátí historii plateb pro daného člena, seřazenou od nejnovější."""
+    if current.role != "admin" and current.member_id != member_id:
+        raise HTTPException(status_code=403, detail="Přístup zamítnut")
     return (
         db.query(Payment)
         .filter(Payment.member_id == member_id)

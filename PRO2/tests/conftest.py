@@ -11,6 +11,10 @@ import os
 import sys
 
 import pytest
+from dotenv import load_dotenv
+
+# Load .env before any app modules are imported so JWT_SECRET is available.
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

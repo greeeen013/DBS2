@@ -7,6 +7,8 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
+import webbrowser
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PRO2 = os.path.join(ROOT, "PRO2")
@@ -14,11 +16,55 @@ TNPW2 = os.path.join(ROOT, "TNPW2")
 TNPW2_SRC = os.path.join(TNPW2, "src")
 DBS2 = os.path.join(ROOT, "DBS2")
 
-BACKEND_CMD = [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
-FRONTEND_CMD = [sys.executable, "-m", "http.server", "8001"]
+BACKEND_CMD = ["python", "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+FRONTEND_CMD = ["python", "-m", "http.server", "8001"]
 
 # pid → popis (pro výpis v menu)
 _procs: dict[int, str] = {}
+
+
+_DOCKER_DESKTOP_PATHS = [
+    r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Docker\Docker\Docker Desktop.exe"),
+]
+
+
+def _docker_responsive() -> bool:
+    try:
+        r = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            timeout=5,
+        )
+        return r.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
+def ensure_docker() -> bool:
+    """Zkontroluje Docker; pokud neběží, spustí Docker Desktop a počká."""
+    if _docker_responsive():
+        return True
+
+    print("  Docker není spuštěn. Hledám Docker Desktop...")
+    exe = next((p for p in _DOCKER_DESKTOP_PATHS if os.path.exists(p)), None)
+    if exe is None:
+        print("  ✗ Docker Desktop nenalezen. Nainstaluj ho a zkus znovu.")
+        return False
+
+    print(f"  Spouštím: {exe}")
+    subprocess.Popen([exe])
+
+    print("  Čekám na Docker", end="", flush=True)
+    for _ in range(60):
+        time.sleep(2)
+        if _docker_responsive():
+            print(" ✓")
+            return True
+        print(".", end="", flush=True)
+
+    print("\n  ✗ Docker se nepodařilo spustit do 120 s.")
+    return False
 
 
 def header(text: str) -> None:
@@ -77,9 +123,15 @@ def start_frontend() -> None:
 
 def start_both() -> None:
     header("Spouštím Backend + Frontend")
+    if not ensure_docker():
+        input("  Stiskni Enter...")
+        return
     run_backend_window()
     run_frontend_window()
-    print("\n  Obě okna jsou otevřena. Enter pro návrat do menu...")
+    print("\n  Otevírám prohlížeč na http://localhost:8001 ...")
+    time.sleep(1)
+    webbrowser.open("http://localhost:8001")
+    print("  Obě okna jsou otevřena. Enter pro návrat do menu...")
     input()
 
 
@@ -102,6 +154,9 @@ def stop_all() -> None:
 
 def docker_export() -> None:
     header("Export Docker images do souborů")
+    if not ensure_docker():
+        input("  Stiskni Enter...")
+        return
     out_dir = os.path.join(DBS2, "docker_export")
     os.makedirs(out_dir, exist_ok=True)
     images = {
@@ -121,6 +176,9 @@ def docker_export() -> None:
 
 def docker_import() -> None:
     header("Import Docker images ze souborů")
+    if not ensure_docker():
+        input("  Stiskni Enter...")
+        return
     out_dir = os.path.join(DBS2, "docker_export")
     tarballs = [
         os.path.join(out_dir, "postgres16.tar"),
@@ -165,7 +223,7 @@ def menu() -> None:
             print(f"  {i}. {label}")
         print("  0. Ukončit")
         print()
-        choice = input("  Volba: ").strip()
+        choice = input("  Volba [Enter = 3]: ").strip() or "3"
         if choice == "0":
             stop_all()
             print("  Nashledanou!")

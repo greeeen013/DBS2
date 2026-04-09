@@ -3,6 +3,9 @@
 # IR03: Přidány routery pro rezervace, platby a členy.
 # CORSMiddleware povoluje přístupy z frontendu (localhost během vývoje).
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -10,7 +13,7 @@ from fastapi.responses import HTMLResponse
 # Import modelů zajišťuje, že SQLAlchemy "vidí" všechny tabulky.
 from models import Base  # noqa: F401
 
-from routers import auth, members, payments, reservations
+from routers import auth, me, members, payments, reservations
 
 # Vytvoření FastAPI aplikace s metadaty pro dokumentaci (Swagger UI na /docs).
 app = FastAPI(
@@ -19,10 +22,11 @@ app = FastAPI(
     version="0.2.0",
 )
 
-# CORS povolení pro frontend – při produkčním nasazení nahradit konkrétní doménou.
+# CORS povolení pro frontend – pouze localhost:8001 (frontend dev server).
+# Při produkčním nasazení nahradit konkrétní produkční doménou.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8001"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -32,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(reservations.router)
 app.include_router(payments.router)
+app.include_router(me.router)
 
 
 @app.get("/", include_in_schema=False)

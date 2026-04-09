@@ -67,6 +67,24 @@ export function selectPaymentView(state) {
   };
 }
 
+export function selectProfileView(state) {
+  return {
+    type: CONST.PROFILE_VIEW,
+    historyReservations: state.history?.reservations ?? [],
+    historyPayments: state.history?.payments ?? [],
+    capabilities: {
+      canGoToReservations: true,
+      canGoToPayments: true,
+    },
+  };
+}
+
+export function selectAuthView(state) {
+  return {
+    type: CONST.AUTH_VIEW,
+  };
+}
+
 /**
  * Hlavní selektor – vrací viewState na základě aktuálního UI módu.
  * Vzor totožný s prepare/selectors.js selectViewState().
@@ -87,6 +105,10 @@ export function selectViewState(state) {
       return selectReservationListView(state);
     case CONST.PAYMENT_VIEW:
       return selectPaymentView(state);
+    case CONST.PROFILE_VIEW:
+      return selectProfileView(state);
+    case CONST.AUTH_VIEW:
+      return selectAuthView(state);
     default:
       return { type: 'ERROR', message: 'Neznámý pohled aplikace.' };
   }

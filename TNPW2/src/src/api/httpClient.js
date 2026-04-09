@@ -26,6 +26,11 @@ export async function apiFetch(path, options = {}) {
     },
   };
 
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
   // Pokud body není string, serializujeme ho jako JSON
   if (config.body && typeof config.body !== 'string') {
     config.body = JSON.stringify(config.body);
@@ -36,7 +41,9 @@ export async function apiFetch(path, options = {}) {
   if (!response.ok) {
     // FastAPI vrací chybové zprávy jako { detail: "..." }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail ?? `Chyba serveru: ${response.status}`);
+    const err = new Error(errorData.detail ?? `Chyba serveru: ${response.status}`);
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();

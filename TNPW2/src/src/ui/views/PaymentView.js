@@ -60,24 +60,5 @@ export function PaymentView({ viewState, dispatch }) {
   );
   container.appendChild(btnZpet);
 
-  // Historie plateb
-  container.appendChild(createTitle(2, 'Historie plateb'));
-
-  if (!platby || platby.length === 0) {
-    container.appendChild(createText(['Žádné platby.'], 'text-muted'));
-    return container;
-  }
-
-  const seznam = createSection('payments-list');
-  platby.forEach((p) => {
-    seznam.appendChild(
-      createDiv('card mb-5 p-10', [
-        createText([`${p.amount} Kč – ${p.payment_type}`], 'mb-0'),
-        createText([`Stav: ${p.status}`], p.status === 'COMPLETED' ? 'text-success' : 'text-muted'),
-      ]),
-    );
-  });
-
-  container.appendChild(seznam);
   return container;
 }

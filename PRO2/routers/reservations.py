@@ -39,15 +39,22 @@ POVOLENE_PRECHODY: dict[str, list[str]] = {
 
 
 @router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
-def vytvor_rezervaci(data: ReservationCreate, db: Session = Depends(get_db)):
+def vytvor_rezervaci(
+    data: ReservationCreate,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
     """
     Vytvoří novou rezervaci ve stavu CREATED.
 
     Kredit se při vytvoření neodečítá – odečítá se až při potvrzení (CONFIRMED),
     aby neblokoval kredity pro rezervace, které ještě nebyly potvrzeny.
     """
+    # Non-admins can only create reservations for themselves – identity comes from
+    # the JWT, not from the request body, to prevent any future auth-check regression.
+    member_id = data.member_id if current.role == "admin" else current.member_id
     nova_rezervace = Reservation(
-        member_id=data.member_id,
+        member_id=member_id,
         lesson_schedule_id=data.lesson_schedule_id,
         note=data.note,
         guest_name=data.guest_name,
@@ -60,14 +67,20 @@ def vytvor_rezervaci(data: ReservationCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[ReservationResponse])
-def seznam_rezervaci(member_id: Optional[int] = None, db: Session = Depends(get_db)):
+def seznam_rezervaci(
+    member_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
     """
     Vrátí seznam rezervací. Volitelně filtruje podle member_id.
 
     Frontend při inicializaci načítá seznam pro přihlášeného člena.
     """
     dotaz = db.query(Reservation)
-    if member_id is not None:
+    if current.role != "admin":
+        dotaz = dotaz.filter(Reservation.member_id == current.member_id)
+    elif member_id is not None:
         dotaz = dotaz.filter(Reservation.member_id == member_id)
     return dotaz.all()
 

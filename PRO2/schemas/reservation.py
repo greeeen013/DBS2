@@ -4,6 +4,7 @@
 # ORM model odráží strukturu DB, schéma odráží kontrakt API (co přijme / vrátí).
 # Díky tomu mohu měnit DB schéma bez zásahu do API kontraktu a naopak.
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -33,6 +34,7 @@ class ReservationResponse(BaseModel):
     lesson_schedule_id: int
     note: Optional[str] = None
     guest_name: Optional[str] = None
+    timestamp_creation: Optional[datetime] = None  # IR04: pro řazení v historii
 
     # from_attributes=True umožňuje číst hodnoty přímo z ORM objektu (ne jen z dict).
     model_config = ConfigDict(from_attributes=True)

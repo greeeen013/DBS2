@@ -31,6 +31,21 @@ export function ReservationListView({ viewState, dispatch }) {
   );
   container.appendChild(btnPlatby);
 
+  // Tlačítko pro přechod na profilovou historii (IR04)
+  const btnProfil = addActionButton(
+    () => dispatch({ type: CONST.ENTER_PROFILE_VIEW }),
+    'Můj profil / Historie',
+    'button--primary mb-15 me-5',
+  );
+  container.appendChild(btnProfil);
+
+  const btnLogout = addActionButton(
+    () => dispatch({ type: CONST.LOGOUT }),
+    'Odhlásit',
+    'button--danger mb-15',
+  );
+  container.appendChild(btnLogout);
+
   // Seznam rezervací
   if (!rezervace || rezervace.length === 0) {
     container.appendChild(createText(['Žádné rezervace.'], 'text-muted'));

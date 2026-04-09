@@ -12,6 +12,14 @@ import * as CONST from '../constants.js';
 export async function appInit({ store, api }) {
   const memberId = store.getState().auth.memberId;
 
+  if (!memberId) {
+    store.setState((state) => ({
+      ...state,
+      ui: { ...state.ui, status: STATUS.RDY, mode: CONST.AUTH_VIEW, errorMessage: null },
+    }));
+    return;
+  }
+
   // Signalizace načítání – frontend zobrazí LoadingView
   store.setState((state) => ({
     ...state,
@@ -39,7 +47,19 @@ export async function appInit({ store, api }) {
       },
     }));
   } catch (error) {
-    // Při selhání backendu ukážeme chybový pohled s popisem problému
+    // 401 = token je neplatný nebo expiroval → automatické odhlášení
+    if (error.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('memberId');
+      localStorage.removeItem('memberName');
+      store.setState((state) => ({
+        ...state,
+        auth: { memberId: null, name: null },
+        ui: { ...state.ui, status: STATUS.RDY, mode: CONST.AUTH_VIEW, errorMessage: null },
+      }));
+      return;
+    }
+    // Při ostatních selhání backendu ukážeme chybový pohled s popisem problému
     store.setState((state) => ({
       ...state,
       ui: {

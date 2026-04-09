@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
 
-SECRET_KEY: str = os.environ.get("JWT_SECRET", "dev-secret-change-in-production")
+SECRET_KEY: str = os.environ["JWT_SECRET"]
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_HOURS = 8
 
