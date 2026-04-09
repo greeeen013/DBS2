@@ -16,8 +16,8 @@ TNPW2 = os.path.join(ROOT, "TNPW2")
 TNPW2_SRC = os.path.join(TNPW2, "src")
 DBS2 = os.path.join(ROOT, "DBS2")
 
-BACKEND_CMD = [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
-FRONTEND_CMD = [sys.executable, "-m", "http.server", "8001"]
+BACKEND_CMD = ["python", "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+FRONTEND_CMD = ["python", "-m", "http.server", "8001"]
 
 # pid → popis (pro výpis v menu)
 _procs: dict[int, str] = {}
