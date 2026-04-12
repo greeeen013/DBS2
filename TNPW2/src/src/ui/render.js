@@ -43,6 +43,7 @@ function createUserHeader(auth, dispatch) {
     'button--danger btn-sm mt-1',
   );
   inner.appendChild(btnLogout);
+
   nav.appendChild(inner);
   return nav;
 }

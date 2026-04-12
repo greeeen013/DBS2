@@ -52,9 +52,11 @@ export async function appInit({ store, api }) {
       localStorage.removeItem('token');
       localStorage.removeItem('memberId');
       localStorage.removeItem('memberName');
+      localStorage.removeItem('memberSurname');
+      localStorage.removeItem('memberRole');
       store.setState((state) => ({
         ...state,
-        auth: { memberId: null, name: null },
+        auth: { memberId: null, name: null, surname: null, role: null },
         ui: { ...state.ui, status: STATUS.RDY, mode: CONST.AUTH_VIEW, errorMessage: null },
       }));
       return;

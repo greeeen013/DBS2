@@ -36,6 +36,8 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     member_id: int
     name: str
+    surname: str
+    role: str
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -49,7 +51,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = vytvor_token(member_id=clen.member_id, role=clen.role)
-    return {"access_token": token, "member_id": clen.member_id, "name": clen.name}
+    return {"access_token": token, "member_id": clen.member_id, "name": clen.name, "surname": clen.surname, "role": clen.role}
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -61,7 +63,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tento e-mail je již zaregistrován.",
         )
-    
+
     novy_clen = Member(
         name=data.name,
         surname=data.surname,
@@ -73,6 +75,6 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     db.add(novy_clen)
     db.commit()
     db.refresh(novy_clen)
-    
+
     token = vytvor_token(member_id=novy_clen.member_id, role=novy_clen.role)
-    return {"access_token": token, "member_id": novy_clen.member_id, "name": novy_clen.name}
+    return {"access_token": token, "member_id": novy_clen.member_id, "name": novy_clen.name, "surname": novy_clen.surname, "role": novy_clen.role}

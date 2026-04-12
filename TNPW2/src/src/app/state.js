@@ -12,6 +12,8 @@ import * as STATUS from '../statuses.js';
 export function createInitialState() {
   const memberId = localStorage.getItem('memberId');
   const memberName = localStorage.getItem('memberName');
+  const memberSurname = localStorage.getItem('memberSurname');
+  const memberRole = localStorage.getItem('memberRole');
   const hasToken = !!localStorage.getItem('token');
 
   return {
@@ -35,6 +37,8 @@ export function createInitialState() {
     auth: {
       memberId: memberId ? parseInt(memberId, 10) : null,
       name: memberName || null,
+      surname: memberSurname || null,
+      role: memberRole || null,
     },
 
     // UI stav

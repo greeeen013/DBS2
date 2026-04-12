@@ -13,12 +13,16 @@ export async function loginAction({ store, api, payload, dispatch }) {
     localStorage.setItem('token', data.access_token);
     localStorage.setItem('memberId', data.member_id);
     localStorage.setItem('memberName', data.name);
-    
+    localStorage.setItem('memberSurname', data.surname);
+    localStorage.setItem('memberRole', data.role);
+
     store.setState((state) => ({
       ...state,
       auth: {
         memberId: data.member_id,
         name: data.name,
+        surname: data.surname,
+        role: data.role,
       },
     }));
     
@@ -49,12 +53,16 @@ export async function registerAction({ store, api, payload, dispatch }) {
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('memberId', data.member_id);
       localStorage.setItem('memberName', data.name);
-      
+      localStorage.setItem('memberSurname', data.surname);
+      localStorage.setItem('memberRole', data.role);
+
       store.setState((state) => ({
         ...state,
         auth: {
           memberId: data.member_id,
           name: data.name,
+          surname: data.surname,
+          role: data.role,
         },
       }));
       
