@@ -34,6 +34,10 @@ export function hasCredits(state) {
   return (state.creditBalance ?? 0) > 0;
 }
 
+export function selectIsAdmin(state) {
+  return state.auth.role === 'admin';
+}
+
 // --- View selektory ---
 
 export function selectReservationListView(state) {
@@ -85,6 +89,13 @@ export function selectAuthView(state) {
   };
 }
 
+export function selectAdminView(state) {
+  return {
+    type: CONST.ADMIN_VIEW,
+    pendingPayments: state.pendingPayments ?? [],
+  };
+}
+
 /**
  * Hlavní selektor – vrací viewState na základě aktuálního UI módu.
  * Vzor totožný s prepare/selectors.js selectViewState().
@@ -109,6 +120,8 @@ export function selectViewState(state) {
       return selectProfileView(state);
     case CONST.AUTH_VIEW:
       return selectAuthView(state);
+    case CONST.ADMIN_VIEW:
+      return selectAdminView(state);
     default:
       return { type: 'ERROR', message: 'Neznámý pohled aplikace.' };
   }

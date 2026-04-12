@@ -25,6 +25,8 @@ export function pathnameToAction(pathname) {
       return CONST.ENTER_PAYMENT_VIEW;
     case '/profile':
       return CONST.ENTER_PROFILE_VIEW;
+    case '/admin':
+      return CONST.ENTER_ADMIN_VIEW;
     case '/':
     case '/reservations':
     default:

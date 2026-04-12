@@ -10,6 +10,7 @@ import { ReservationListView } from './views/ReservationListView.js';
 import { PaymentView } from './views/PaymentView.js';
 import { ProfileView } from './views/ProfileView.js';
 import { renderAuthView } from './views/AuthView.js';
+import { AdminView } from './views/AdminView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
@@ -17,16 +18,30 @@ import { addActionButton } from './builder/components/button.js';
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
-function createUserHeader(name, dispatch) {
+function createUserHeader(auth, dispatch) {
   const nav = createElement('nav', { className: 'navbar navbar-dark bg-dark px-3 py-2' });
-  const inner = createElement('div', { className: 'd-flex align-items-center ms-auto gap-3' });
-  const nameSpan = createElement('span', { className: 'text-white fw-semibold' }, [name ?? '']);
+  const inner = createElement('div', { className: 'd-flex flex-column align-items-end ms-auto' });
+
+  const fullName = [auth.name, auth.surname].filter(Boolean).join(' ');
+  const nameSpan = createElement('span', { className: 'text-white fw-semibold' }, [fullName]);
+  inner.appendChild(nameSpan);
+
+  if (auth.role === 'admin') {
+    const adminBadge = createElement('span', { className: 'badge bg-warning text-dark mt-1' }, ['Admin']);
+    inner.appendChild(adminBadge);
+    const btnAdmin = addActionButton(
+      () => dispatch({ type: CONST.ENTER_ADMIN_VIEW }),
+      'Správa plateb',
+      'button--warning btn-sm mt-1',
+    );
+    inner.appendChild(btnAdmin);
+  }
+
   const btnLogout = addActionButton(
     () => dispatch({ type: CONST.LOGOUT }),
     'Odhlásit',
-    'button--danger btn-sm',
+    'button--danger btn-sm mt-1',
   );
-  inner.appendChild(nameSpan);
   inner.appendChild(btnLogout);
   nav.appendChild(inner);
   return nav;
@@ -39,7 +54,7 @@ export function render(root, state, dispatch) {
 
   // Uživatelská lišta – zobrazí se na všech pohledech kromě přihlašovací stránky
   if (state.auth.memberId && viewState.type !== CONST.AUTH_VIEW) {
-    root.appendChild(createUserHeader(state.auth.name, dispatch));
+    root.appendChild(createUserHeader(state.auth, dispatch));
   }
 
   let view;
@@ -68,7 +83,11 @@ export function render(root, state, dispatch) {
     case CONST.PROFILE_VIEW:
       view = ProfileView({ viewState, dispatch });
       break;
-    
+
+    case CONST.ADMIN_VIEW:
+      view = AdminView({ viewState, dispatch });
+      break;
+
     case CONST.AUTH_VIEW:
       renderAuthView(root, state, dispatch);
       // Notifikace pro auth view (renderAuthView dělá root.appendChild uvnitř pro AuthView container)

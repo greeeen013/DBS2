@@ -28,6 +28,9 @@ export function createInitialState() {
       payments: [],
     },
 
+    // Admin: čekající platby ke schválení
+    pendingPayments: [],
+
     // Přihlášený člen
     auth: {
       memberId: memberId ? parseInt(memberId, 10) : null,
