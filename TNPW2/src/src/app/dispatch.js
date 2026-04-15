@@ -10,6 +10,13 @@ import { createPayment } from './actions/createPayment.js';
 import { enterProfileView } from './actions/enterProfileView.js';
 import { enterAdminView } from './actions/enterAdminView.js';
 import { loginAction, registerAction } from './actions/authActions.js';
+import { createLesson } from './actions/createLesson.js';
+import { cancelLesson } from './actions/cancelLesson.js';
+import { updateLessonCapacity } from './actions/updateLessonCapacity.js';
+import { closeLesson } from './actions/closeLesson.js';
+import { setAttendance } from './actions/setAttendance.js';
+import { openLesson } from './actions/openLesson.js';
+
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
@@ -59,6 +66,20 @@ export function createDispatcher(store, api) {
 
       case CONST.ENTER_ADMIN_VIEW:
         return enterAdminView({ store, api });
+
+      case CONST.ENTER_LESSON_LIST:
+        if (typeof history !== 'undefined') history.pushState({}, '', '/lessons'); // optional but nice
+        return store.setState((state) => ({
+          ...state,
+          ui: { ...state.ui, mode: CONST.LESSON_LIST, status: STATUS.RDY },
+        }));
+
+      case CONST.ENTER_LESSON_CREATION:
+        if (typeof history !== 'undefined') history.pushState({}, '', '/lessons/create'); // optional but nice
+        return store.setState((state) => ({
+          ...state,
+          ui: { ...state.ui, mode: CONST.LESSON_CREATION_VIEW, status: STATUS.RDY },
+        }));
 
       case CONST.APPROVE_PAYMENT: {
         const { paymentId } = payload;
@@ -119,6 +140,25 @@ export function createDispatcher(store, api) {
 
       case CONST.CREATE_PAYMENT:
         return createPayment({ store, api, payload });
+
+      // --- Lekce (Student B IR02)
+      case CONST.OPEN_LESSON:
+        return openLesson({ store, api, payload });
+
+      case CONST.CREATE_LESSON:
+        return createLesson({ store, api, payload });
+
+      case CONST.CANCEL_LESSON:
+        return cancelLesson({ store, api, payload });
+
+      case CONST.UPDATE_CAPACITY:
+        return updateLessonCapacity({ store, api, payload });
+
+      case CONST.CLOSE_LESSON:
+        return closeLesson({ store, api, payload });
+
+      case CONST.SET_ATTENDANCE:
+        return setAttendance({ store, api, payload });
 
       case CONST.RECOVER_FROM_ERROR:
         return store.setState((state) => ({

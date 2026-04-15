@@ -1,11 +1,3 @@
-# FastAPI závislosti pro autentizaci.
-#
-# get_current_member – extrahuje přihlášeného člena z Bearer tokenu.
-# require_admin     – totéž, ale navíc ověří roli "admin".
-#
-# Poznámka k roli: role se čte z JWT tokenu (nikoli z DB), protože token
-# vydává server a je důvěryhodný. DB member_id slouží jen k ověření existence člena.
-
 from dataclasses import dataclass
 
 from fastapi import Depends, HTTPException, status

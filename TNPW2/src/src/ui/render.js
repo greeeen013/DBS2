@@ -11,6 +11,8 @@ import { PaymentView } from './views/PaymentView.js';
 import { ProfileView } from './views/ProfileView.js';
 import { renderAuthView } from './views/AuthView.js';
 import { AdminView } from './views/AdminView.js';
+import { LessonListView } from './views/LessonListView.js';
+import { LessonCreationView } from './views/LessonCreationView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
@@ -79,6 +81,14 @@ export function render(root, state, dispatch) {
 
     case CONST.PAYMENT_VIEW:
       view = PaymentView({ viewState, dispatch });
+      break;
+
+    case CONST.LESSON_LIST:
+      view = LessonListView({ viewState, dispatch });
+      break;
+
+    case CONST.LESSON_CREATION_VIEW:
+      view = LessonCreationView({ viewState, dispatch });
       break;
 
     case CONST.PROFILE_VIEW:

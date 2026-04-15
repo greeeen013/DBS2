@@ -21,6 +21,10 @@ export function createInitialState() {
     reservations: [],
     payments: [],
 
+    // Lekce a docházka
+    lessons: [],
+    attendances: [],
+
     // Kreditový zůstatek – načítá se při inicializaci z API
     creditBalance: null,
 
@@ -41,7 +45,7 @@ export function createInitialState() {
       role: memberRole || null,
     },
 
-    // UI stav
+    // UI stav – totožná struktura jako v prepare/ pro konzistenci
     ui: {
       mode: hasToken ? CONST.RESERVATION_LIST : CONST.AUTH_VIEW,
       status: hasToken ? STATUS.LOAD : STATUS.RDY,

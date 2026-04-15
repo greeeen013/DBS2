@@ -16,6 +16,10 @@ export function selectPayments(state) {
   return state.payments ?? [];
 }
 
+export function selectLessons(state) {
+  return state.lessons ?? [];
+}
+
 export function selectCreditBalance(state) {
   return state.creditBalance;
 }
@@ -71,6 +75,18 @@ export function selectPaymentView(state) {
   };
 }
 
+export function selectLessonListView(state) {
+  const lekce = selectLessons(state);
+
+  return {
+    type: CONST.LESSON_LIST,
+    lekce,
+    capabilities: {
+      canGoToReservations: true,
+    },
+  };
+}
+
 export function selectProfileView(state) {
   return {
     type: CONST.PROFILE_VIEW,
@@ -116,6 +132,10 @@ export function selectViewState(state) {
       return selectReservationListView(state);
     case CONST.PAYMENT_VIEW:
       return selectPaymentView(state);
+    case CONST.LESSON_LIST:
+      return selectLessonListView(state);
+    case CONST.LESSON_CREATION_VIEW:
+      return { type: CONST.LESSON_CREATION_VIEW };
     case CONST.PROFILE_VIEW:
       return selectProfileView(state);
     case CONST.AUTH_VIEW:
