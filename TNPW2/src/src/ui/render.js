@@ -10,6 +10,7 @@ import { ReservationListView } from './views/ReservationListView.js';
 import { PaymentView } from './views/PaymentView.js';
 import { ProfileView } from './views/ProfileView.js';
 import { renderAuthView } from './views/AuthView.js';
+import { AdminView } from './views/AdminView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
@@ -28,6 +29,12 @@ function createUserHeader(auth, dispatch) {
   if (auth.role === 'admin') {
     const adminBadge = createElement('span', { className: 'badge bg-warning text-dark mt-1' }, ['Admin']);
     inner.appendChild(adminBadge);
+    const btnAdmin = addActionButton(
+      () => dispatch({ type: CONST.ENTER_ADMIN_VIEW }),
+      'Správa plateb',
+      'button--warning btn-sm mt-1',
+    );
+    inner.appendChild(btnAdmin);
   }
 
   const btnLogout = addActionButton(
@@ -77,7 +84,11 @@ export function render(root, state, dispatch) {
     case CONST.PROFILE_VIEW:
       view = ProfileView({ viewState, dispatch });
       break;
-    
+
+    case CONST.ADMIN_VIEW:
+      view = AdminView({ viewState, dispatch });
+      break;
+
     case CONST.AUTH_VIEW:
       renderAuthView(root, state, dispatch);
       // Notifikace pro auth view (renderAuthView dělá root.appendChild uvnitř pro AuthView container)

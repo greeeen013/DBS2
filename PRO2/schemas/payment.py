@@ -38,3 +38,17 @@ class PaymentResponse(BaseModel):
     date: Optional[datetime] = None  # IR04: pro řazení v historii
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PendingPaymentResponse(BaseModel):
+    """Odpověď API pro čekající platbu – rozšířena o jméno člena."""
+
+    payment_id: int
+    amount: Optional[Decimal] = None
+    payment_type: Optional[str] = None
+    member_id: Optional[int] = None
+    member_name: Optional[str] = None
+    member_surname: Optional[str] = None
+    date: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)

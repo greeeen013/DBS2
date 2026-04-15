@@ -15,7 +15,7 @@ from auth.dependencies import CurrentUser, get_current_member, require_admin
 from db.dependencies import get_db
 from models.member import Member
 from models.payment import Payment
-from schemas.payment import PaymentCreate, PaymentResponse, PaymentStatusUpdate
+from schemas.payment import PaymentCreate, PaymentResponse, PaymentStatusUpdate, PendingPaymentResponse
 
 router = APIRouter(prefix="/payments", tags=["Platby"])
 
@@ -26,6 +26,33 @@ POVOLENE_PRECHODY: dict[str, list[str]] = {
     "FAILED": [],
     "REFUNDED": [],
 }
+
+
+@router.get("/pending", response_model=list[PendingPaymentResponse])
+def pending_platby(
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(require_admin),
+):
+    """Vrátí všechny platby ve stavu PENDING včetně jména člena. Pouze pro adminy."""
+    rows = (
+        db.query(Payment, Member)
+        .join(Member, Payment.member_id == Member.member_id)
+        .filter(Payment.status == "PENDING")
+        .order_by(Payment.date.asc())
+        .all()
+    )
+    result = []
+    for platba, clen in rows:
+        result.append(PendingPaymentResponse(
+            payment_id=platba.payment_id,
+            amount=platba.amount,
+            payment_type=platba.payment_type,
+            member_id=platba.member_id,
+            member_name=clen.name,
+            member_surname=clen.surname,
+            date=platba.date,
+        ))
+    return result
 
 
 @router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
