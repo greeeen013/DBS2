@@ -13,7 +13,7 @@ from fastapi.responses import HTMLResponse
 # Import modelů zajišťuje, že SQLAlchemy "vidí" všechny tabulky.
 from models import Base  # noqa: F401
 
-from routers import auth, me, members, payments, reservations
+from routers import auth, me, members, payments, reservations, lessons
 
 # Vytvoření FastAPI aplikace s metadaty pro dokumentaci (Swagger UI na /docs).
 app = FastAPI(
@@ -37,6 +37,7 @@ app.include_router(members.router)
 app.include_router(reservations.router)
 app.include_router(payments.router)
 app.include_router(me.router)
+app.include_router(lessons.router)
 
 
 @app.get("/", include_in_schema=False)

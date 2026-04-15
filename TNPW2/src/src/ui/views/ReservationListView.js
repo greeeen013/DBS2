@@ -27,7 +27,7 @@ export function ReservationListView({ viewState, dispatch }) {
   const btnPlatby = addActionButton(
     () => dispatch({ type: CONST.ENTER_PAYMENT_VIEW }),
     'Dobít kredity',
-    'button--success mb-15',
+    'button--success mb-15 me-5',
   );
   container.appendChild(btnPlatby);
 
@@ -38,6 +38,14 @@ export function ReservationListView({ viewState, dispatch }) {
     'button--primary mb-15 me-5',
   );
   container.appendChild(btnProfil);
+
+  // Tlačítko pro přechod na správu lekcí
+  const btnLekce = addActionButton(
+    () => dispatch({ type: CONST.ENTER_LESSON_LIST }),
+    'Lekce',
+    'button--primary mb-15',
+  );
+  container.appendChild(btnLekce);
 
   // Seznam rezervací
   if (!rezervace || rezervace.length === 0) {

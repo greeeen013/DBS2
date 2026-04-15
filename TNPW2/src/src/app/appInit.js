@@ -27,11 +27,12 @@ export async function appInit({ store, api }) {
   }));
 
   try {
-    // Paralelní načtení rezervací, plateb a kreditového zůstatku
-    const [rezervace, platby, zustatek] = await Promise.all([
+    // Paralelní načtení rezervací, plateb, kreditového zůstatku a lekcí
+    const [rezervace, platby, zustatek, lekce] = await Promise.all([
       api.reservations.getAll(memberId),
       api.payments.getHistory(memberId),
       api.payments.getBalance(memberId),
+      api.lessons.getAll(),
     ]);
 
     store.setState((state) => ({
@@ -39,6 +40,7 @@ export async function appInit({ store, api }) {
       reservations: rezervace,
       payments: platby,
       creditBalance: zustatek.credit_balance,
+      lessons: lekce,
       ui: {
         ...state.ui,
         status: STATUS.RDY,

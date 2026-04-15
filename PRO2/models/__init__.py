@@ -9,5 +9,6 @@ from .base import Base
 from .member import Member
 from .reservation import Reservation
 from .payment import Payment
+from .lesson import LessonSchedule
 
-__all__ = ["Base", "Member", "Reservation", "Payment"]
+__all__ = ["Base", "Member", "Reservation", "Payment", "LessonSchedule"]

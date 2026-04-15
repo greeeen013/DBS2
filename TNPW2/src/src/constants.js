@@ -1,12 +1,16 @@
+
 // Konstanty pro typy akcí a názvů pohledů v MMA aplikaci.
 // Vzor přejat ze prepare/constants.js – každá akce/pohled má svůj string identifikátor.
 
 // --- Pohledy (mode v UI stavu) ---
-export const RESERVATION_LIST = 'RESERVATION_LIST';
-export const PAYMENT_VIEW     = 'PAYMENT_VIEW';
-export const PROFILE_VIEW     = 'PROFILE_VIEW';
-export const AUTH_VIEW        = 'AUTH_VIEW';
-export const ADMIN_VIEW       = 'ADMIN_VIEW';
+export const RESERVATION_LIST    = 'RESERVATION_LIST';
+export const PAYMENT_VIEW        = 'PAYMENT_VIEW';
+export const PROFILE_VIEW        = 'PROFILE_VIEW';
+export const AUTH_VIEW           = 'AUTH_VIEW';
+export const ADMIN_VIEW          = 'ADMIN_VIEW';
+// Student B – lekce
+export const LESSON_LIST         = 'LESSON_LIST';
+export const LESSON_CREATION_VIEW = 'LESSON_CREATION_VIEW';
 
 // --- Akce dispatcheru ---
 export const ENTER_RESERVATION_LIST = 'ENTER_RESERVATION_LIST';
@@ -23,4 +27,14 @@ export const CANCEL_RESERVATION     = 'CANCEL_RESERVATION';
 export const CREATE_PAYMENT         = 'CREATE_PAYMENT';
 export const RECOVER_FROM_ERROR     = 'RECOVER_FROM_ERROR';
 export const CLEAR_NOTIFICATION     = 'CLEAR_NOTIFICATION';
+// Student B – navigace lekce
+export const ENTER_LESSON_LIST      = 'ENTER_LESSON_LIST';
+export const ENTER_LESSON_CREATION  = 'ENTER_LESSON_CREATION';
 
+// --- Lekce (Scheduled_Lesson a Attendance) – Student B IR02 ---
+export const OPEN_LESSON     = 'OPEN_LESSON';     // Zveřejnění lekce
+export const CREATE_LESSON   = 'CREATE_LESSON';   // Trenér vytvoří novou lekci
+export const CANCEL_LESSON   = 'CANCEL_LESSON';   // Trenér zruší lekci, stornují se rezervace
+export const UPDATE_CAPACITY = 'UPDATE_CAPACITY'; // Aktualizace obsazenosti (přechod do FULL)
+export const CLOSE_LESSON    = 'CLOSE_LESSON';    // Lekce začala / skončila
+export const SET_ATTENDANCE  = 'SET_ATTENDANCE';  // Nastavení docházky
