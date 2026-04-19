@@ -96,9 +96,10 @@ class Reservation(Base):
         comment="ID člena, který rezervaci provedl.",
     )
 
-    # FK na tabulku 'lesson_schedule' – ORM model zatím neexistuje, plain integer.
+    # FK na tabulku 'lesson_schedule'
     lesson_schedule_id: Mapped[int] = mapped_column(
         Integer,
+        ForeignKey("lesson_schedule.lesson_schedule_id"),
         nullable=False,
         comment="ID naplánované lekce, na kterou se rezervace vztahuje.",
     )

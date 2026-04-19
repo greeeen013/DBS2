@@ -11,7 +11,7 @@ import { addActionButton } from '../builder/components/button.js';
 import * as CONST from '../../constants.js';
 
 export function ReservationListView({ viewState, dispatch }) {
-  const { rezervace, zustatek } = viewState;
+  const { rezervace, zustatek, reservationCapabilities = [] } = viewState;
 
   const container = createSection('container mt-15');
 
@@ -55,15 +55,17 @@ export function ReservationListView({ viewState, dispatch }) {
 
   const karty = createSection('cards');
 
-  rezervace.forEach((r) => {
+  rezervace.forEach((r, idx) => {
+    const caps = reservationCapabilities[idx] ?? {};
+
     const karta = createDiv('card mb-10 p-15', [
       createTitle(3, `Lekce #${r.lesson_schedule_id}`),
       createText([`Stav: ${r.status}`], r.status === 'CONFIRMED' ? 'text-success' : ''),
       r.note ? createText([`Poznámka: ${r.note}`]) : '',
     ]);
 
-    // Akce dostupné podle stavu rezervace
-    if (r.status === 'CREATED') {
+    // Akce dostupné podle capabilities
+    if (caps.canConfirm) {
       const btnConfirm = addActionButton(
         () => dispatch({ type: CONST.CONFIRM_RESERVATION, payload: { reservationId: r.reservation_id } }),
         'Potvrdit (−100 kreditů)',
@@ -72,7 +74,7 @@ export function ReservationListView({ viewState, dispatch }) {
       karta.appendChild(btnConfirm);
     }
 
-    if (r.status === 'CREATED' || r.status === 'CONFIRMED') {
+    if (caps.canCancel) {
       const btnCancel = addActionButton(
         () => dispatch({ type: CONST.CANCEL_RESERVATION, payload: { reservationId: r.reservation_id } }),
         'Zrušit',

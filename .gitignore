@@ -5,6 +5,7 @@ Requirements/
 *.db
 *.sqlite
 *.sqlite3
+DBS2/dump.sql
 
 # Python (PRO2) a zkompilovaná cache
 __pycache__/
