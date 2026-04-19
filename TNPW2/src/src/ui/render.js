@@ -2,6 +2,13 @@
 //
 // Při každé změně stavu vymaže DOM a znovu vykreslí odpovídající pohled.
 // Notifikace (toast zprávy) se zobrazí na konci každého renderu.
+//
+// IR06: render.js je součástí renderovací logiky (View composition).
+// Sestavuje DOM ze viewState a handlerů:
+//   1. selectViewState (IR05) → viewState s capabilities
+//   2. createHandlers (IR06)  → handlers objekt odpovídající pohledu
+//   3. ViewFn({ viewState, handlers }) → DOM uzel
+// Pohledy NEVOLAJÍ dispatch přímo – dostávají připravené handlery.
 
 import { selectViewState } from '../infra/store/selectors.js';
 import { LoadingView } from './views/LoadingView.js';
@@ -17,6 +24,8 @@ import { createSuccessNotification, createErrorNotification } from './builder/la
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
 import { addActionButton } from './builder/components/button.js';
+// IR06: Centrální továrna handlerů – odděluje rozhodování od renderování
+import { createHandlers } from '../app/actionHandlers/createHandlers.js';
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
@@ -55,6 +64,10 @@ export function render(root, state, dispatch) {
 
   const viewState = selectViewState(state);
 
+  // IR06: Sestavíme handlery pro aktuální pohled (prázdný objekt pro pohledy
+  // mimo IR06 scope – ty stále pracují s dispatch přímo přes svůj vlastní handler).
+  const handlers = createHandlers(dispatch, viewState);
+
   // Uživatelská lišta – zobrazí se na všech pohledech kromě přihlašovací stránky
   if (state.auth.memberId && viewState.type !== CONST.AUTH_VIEW) {
     root.appendChild(createUserHeader(state.auth, dispatch));
@@ -76,7 +89,8 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.RESERVATION_LIST:
-      view = ReservationListView({ viewState, dispatch });
+      // IR06: handlers obsahuje onGoToPayments, onGoToLessons, reservationHandlers
+      view = ReservationListView({ viewState, handlers });
       break;
 
     case CONST.PAYMENT_VIEW:
@@ -84,11 +98,13 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.LESSON_LIST:
-      view = LessonListView({ viewState, dispatch });
+      // IR06: handlers obsahuje onCreateLesson, onGoToReservations, lessonHandlers[]
+      view = LessonListView({ viewState, handlers });
       break;
 
     case CONST.LESSON_CREATION_VIEW:
-      view = LessonCreationView({ viewState, dispatch });
+      // IR06: handlers obsahuje onSubmit, onCancel
+      view = LessonCreationView({ viewState, handlers });
       break;
 
     case CONST.PROFILE_VIEW:
