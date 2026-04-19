@@ -26,12 +26,44 @@ class LessonResponse(LessonBase):
         orm_mode = True
         from_attributes = True
 
+class LessonDetailResponse(LessonBase):
+    """
+    Rozšířená odpověď pro detail jedné lekce.
+    Oproti LessonResponse obsahuje navíc registered_count –
+    počet aktivních rezervací (CREATED + CONFIRMED), který
+    trenér potřebuje ke sledování obsazenosti lekce.
+    """
+    lesson_schedule_id: int
+    registered_count: int = 0
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 class LessonStatusUpdate(BaseModel):
     status: str
 
 class LessonStatusResponse(BaseModel):
     lesson_schedule_id: int
     status: str
+
+class LessonAttendeeResponse(BaseModel):
+    """
+    Jeden účastník lekce – odpověď endpointu GET /lessons/{id}/attendees.
+    Obsahuje member_id, stav rezervace a přítomnost (attendance).
+    Trenér pomocí tohoto schématu zjistí přesně kdo je zapsán
+    a zda se daný člen lekce fyzicky zúčastnil.
+    """
+    reservation_id: int
+    member_id: int
+    status: str
+    attendance: Optional[bool] = None
+    guest_name: Optional[str] = None
+    note: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 class AttendanceUpdate(BaseModel):
     member_id: int

@@ -9,10 +9,12 @@ from models.reservation import Reservation
 from schemas.lesson import (
     LessonCreate,
     LessonResponse,
+    LessonDetailResponse,
     LessonStatusUpdate,
     LessonStatusResponse,
     AttendanceUpdate,
     AttendanceResponse,
+    LessonAttendeeResponse,
 )
 
 router = APIRouter(prefix="/lessons", tags=["Lekce"])
@@ -21,6 +23,65 @@ router = APIRouter(prefix="/lessons", tags=["Lekce"])
 def get_lessons(db: Session = Depends(get_db)):
     """Načte seznam všech rozvrhnutých lekcí."""
     return db.query(LessonSchedule).all()
+
+@router.get("/{lesson_id}", response_model=LessonDetailResponse)
+def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
+    """
+    Vrátí detail jedné konkrétní lekce včetně počtu registrovaných.
+    Potřebné pro UI trenéra (zjistit obsazenost, stav, čas lekce).
+    """
+    lesson = db.get(LessonSchedule, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+
+    registered_count = db.query(Reservation).filter(
+        Reservation.lesson_schedule_id == lesson_id,
+        Reservation.status.in_(["CREATED", "CONFIRMED"])
+    ).count()
+
+    return LessonDetailResponse(
+        lesson_schedule_id=lesson.lesson_schedule_id,
+        name=lesson.name,
+        description=lesson.description,
+        duration=lesson.duration,
+        start_time=lesson.start_time,
+        end_time=lesson.end_time,
+        maximum_capacity=lesson.maximum_capacity,
+        status=lesson.status,
+        price=lesson.price,
+        is_private=lesson.is_private,
+        employee_id=lesson.employee_id,
+        lesson_template_id=lesson.lesson_template_id,
+        lesson_type_id=lesson.lesson_type_id,
+        registered_count=registered_count,
+    )
+
+@router.get("/{lesson_id}/attendees", response_model=List[LessonAttendeeResponse])
+def get_lesson_attendees(lesson_id: int, db: Session = Depends(get_db)):
+    """
+    Vrátí seznam registrovaných členů na konkrétní lekci.
+    Klíčový endpoint pro trenéra: zjistí, kdo je na lekci zapsán,
+    jaký je stav rezervace a zda se člen zúčastnil (attendance).
+    """
+    lesson = db.get(LessonSchedule, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+
+    reservations = db.query(Reservation).filter(
+        Reservation.lesson_schedule_id == lesson_id
+    ).all()
+
+    return [
+        LessonAttendeeResponse(
+            reservation_id=r.reservation_id,
+            member_id=r.member_id,
+            status=r.status,
+            attendance=r.attendance,
+            guest_name=r.guest_name,
+            note=r.note,
+        )
+        for r in reservations
+    ]
 
 @router.post("/", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
 def create_lesson(data: LessonCreate, db: Session = Depends(get_db)):

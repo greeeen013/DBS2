@@ -1,12 +1,3 @@
-// Pohled se seznamem lekcí (Student B: Scheduled_Lesson).
-//
-// IR05: Pohled NEROZHODUJE, co zobrazit – čte capabilities z viewState.
-// Capabilities jsou plně vypočítány v selectors.js (canOpen, canCancel, …).
-//
-// IR06: Pohled NEVOLÁ dispatch přímo.
-// Dostane objekt `handlers` sestavený createHandlers() (IR06 handler factory).
-// Každý handler existuje jen pokud byl pro danou akci povolen capability selektorem.
-//
 // Akce a tlačítka se zobrazují podle:
 //   handlers.lessonHandlers[idx].onOpen      → Zveřejnit
 //   handlers.lessonHandlers[idx].onCancel    → Zrušit
@@ -37,7 +28,7 @@ export function LessonListView({ viewState, handlers }) {
   // Ovládací tlačítka nahoře
   const headerActions = createDiv('header-actions mb-15', []);
 
-  // IR06: handler existuje → tlačítko se zobrazí, neexistuje → ne
+  // handler existuje → tlačítko se zobrazí, neexistuje → ne
   if (onGoToReservations) {
     const btnZpet = addActionButton(
       onGoToReservations,
@@ -47,7 +38,7 @@ export function LessonListView({ viewState, handlers }) {
     headerActions.appendChild(btnZpet);
   }
 
-  // IR06: onCreateLesson existuje jen pokud capabilities.canCreateLesson === true (trainer/admin)
+  // onCreateLesson existuje jen pokud capabilities.canCreateLesson === true (trainer/admin)
   if (onCreateLesson) {
     const btnCreateLesson = addActionButton(
       onCreateLesson,
@@ -68,9 +59,9 @@ export function LessonListView({ viewState, handlers }) {
   const karty = createSection('cards');
 
   lekce.forEach((l, idx) => {
-    // IR05: Capabilities pro tuto konkrétní lekci jsou předpočítány selektorem
+    // Capabilities pro tuto konkrétní lekci jsou předpočítány selektorem
     const caps = lessonCapabilities[idx] ?? {};
-    // IR06: Handlery pro tuto konkrétní lekci (sestaveny dle caps)
+    // Handlery pro tuto konkrétní lekci (sestaveny dle caps)
     const lh = lessonHandlers[idx] ?? {};
     const lessonId = l.lesson_schedule_id ?? l.lesson_id;
 
@@ -82,9 +73,6 @@ export function LessonListView({ viewState, handlers }) {
       ),
       createText([`Obsazenost: ${l.registered_members ?? 0} / ${l.maximal_capacity ?? '?'}`]),
     ]);
-
-    // IR06: Každé tlačítko se přidá jen pokud odpovídající handler existuje
-    // (handler byl sestaven POUZE tehdy, když capability selektor vrátil true)
 
     // Zveřejnit lekci (DRAFT → OPEN)
     if (lh.onOpen) {

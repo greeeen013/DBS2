@@ -11,13 +11,16 @@
 //   • lessonCreationHandlers() vrací onSubmit + onCancel
 //   • reservationListHandlers() sestaví per-rezervace handlery
 //   • createHandlers() pro neznámý pohled vrátí prázdný objekt
+//   • getLessonStatusClass() mapuje stavy na správné CSS třídy
+//   • getLessonStatusLabel() vrací správná česká označení stavů
 //
-// Testy nepoužívají DOM – testují čistě handler factory funkce.
+// Testy nepoužívají DOM – testují čistě handler factory funkce a čisté funkce.
 
 import { createHandlers } from '../../src/src/app/actionHandlers/createHandlers.js';
 import { lessonListHandlers } from '../../src/src/app/actionHandlers/lessonListHandlers.js';
 import { lessonCreationHandlers } from '../../src/src/app/actionHandlers/lessonCreationHandlers.js';
 import { reservationListHandlers } from '../../src/src/app/actionHandlers/reservationListHandlers.js';
+import { getLessonStatusClass, getLessonStatusLabel } from '../../src/src/ui/builder/components/lessonCard.js';
 import { assert } from '../support/assert.mjs';
 
 // ---------------------------------------------------------------------------
@@ -196,6 +199,53 @@ export function testIR06() {
     'createHandlers: neznámý pohled vrátí objekt (ne null/undefined)');
   assert(Object.keys(hUnknown).length === 0,
     'createHandlers: neznámý pohled vrátí prázdný objekt');
+
+  // ---------------------------------------------------------------------------
+  // Testy getLessonStatusClass – propis stavu do CSS tříd (stínování dlaždic)
+  // ---------------------------------------------------------------------------
+
+  assert(getLessonStatusClass('DRAFT')       === 'card--draft',
+    'getLessonStatusClass: DRAFT → card--draft');
+  assert(getLessonStatusClass('OPEN')        === 'card--open',
+    'getLessonStatusClass: OPEN → card--open');
+  assert(getLessonStatusClass('FULL')        === 'card--full',
+    'getLessonStatusClass: FULL → card--full');
+  assert(getLessonStatusClass('IN_PROGRESS') === 'card--in-progress',
+    'getLessonStatusClass: IN_PROGRESS → card--in-progress');
+  assert(getLessonStatusClass('COMPLETED')   === 'card--completed',
+    'getLessonStatusClass: COMPLETED → card--completed');
+  assert(getLessonStatusClass('CANCELLED')   === 'card--cancelled',
+    'getLessonStatusClass: CANCELLED → card--cancelled');
+
+  // Přeplněná lekce (OPEN + isFull=true) musí vypadat jako FULL
+  assert(getLessonStatusClass('OPEN', true)  === 'card--full',
+    'getLessonStatusClass: OPEN + isFull=true → card--full (přeplněna)');
+  // isFull neovlivňuje jiné stavy
+  assert(getLessonStatusClass('DRAFT', true) === 'card--draft',
+    'getLessonStatusClass: isFull=true ignorován pro DRAFT');
+
+  // Neznámý stav → fallback na draft
+  assert(getLessonStatusClass('NEZNAMY')     === 'card--draft',
+    'getLessonStatusClass: neznámý stav → fallback card--draft');
+
+  // ---------------------------------------------------------------------------
+  // Testy getLessonStatusLabel – čitelné popisky stavů v češtině
+  // ---------------------------------------------------------------------------
+
+  assert(getLessonStatusLabel('DRAFT')       === 'Připravuje se',
+    'getLessonStatusLabel: DRAFT → Připravuje se');
+  assert(getLessonStatusLabel('OPEN')        === 'Otevřená',
+    'getLessonStatusLabel: OPEN → Otevřená');
+  assert(getLessonStatusLabel('FULL')        === 'Plná kapacita',
+    'getLessonStatusLabel: FULL → Plná kapacita');
+  assert(getLessonStatusLabel('IN_PROGRESS') === 'Probíhá',
+    'getLessonStatusLabel: IN_PROGRESS → Probíhá');
+  assert(getLessonStatusLabel('COMPLETED')   === 'Dokončená',
+    'getLessonStatusLabel: COMPLETED → Dokončená');
+  assert(getLessonStatusLabel('CANCELLED')   === 'Stornována',
+    'getLessonStatusLabel: CANCELLED → Stornována');
+  assert(getLessonStatusLabel('OPEN', true)  === 'PLNÁ',
+    'getLessonStatusLabel: OPEN + isFull=true → PLNÁ');
 
   console.log('[IR06] Všechny testy renderovací logiky prošly ✓');
 }
