@@ -197,3 +197,50 @@ class TestLessonAttendees:
         response = client.get("/lessons/99999/attendees")
 
         assert response.status_code == 404
+
+# ---------------------------------------------------------------------------
+# POST /lessons/{lesson_id}/team-attendance – hromadná docházka
+# ---------------------------------------------------------------------------
+
+class TestBulkAttendance:
+
+    def test_bulk_attendance_success(self, client, setup_db):
+        """Úspěšné uložení docházky pro dva členy najednou."""
+        from tests.conftest import TestingSessionLocal
+        db = TestingSessionLocal()
+        
+        lesson_id = vytvor_lekci(db, status="COMPLETED")
+        clen1 = vytvor_clena(db, "Ivan", "Hrozný")
+        clen2 = vytvor_clena(db, "Petr", "Veliký")
+        vytvor_rezervaci(db, lesson_id, clen1, status="CONFIRMED")
+        vytvor_rezervaci(db, lesson_id, clen2, status="CONFIRMED")
+        db.close()
+
+        payload = {
+            "members": [
+                {"member_id": clen1, "attended": True},
+                {"member_id": clen2, "attended": False}
+            ]
+        }
+
+        response = client.post(f"/lessons/{lesson_id}/team-attendance", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["updated_count"] == 2
+        assert "úspěšně uložena" in data["message"]
+
+        # Ověření v DB
+        db = TestingSessionLocal()
+        from models.reservation import Reservation
+        res1 = db.query(Reservation).filter_by(member_id=clen1, lesson_schedule_id=lesson_id).one()
+        res2 = db.query(Reservation).filter_by(member_id=clen2, lesson_schedule_id=lesson_id).one()
+        assert res1.attendance is True
+        assert res2.attendance is False
+        db.close()
+
+    def test_bulk_attendance_nonexistent_lesson(self, client, setup_db):
+        """Pokus o uložení docházky u neexistující lekce vrátí 404."""
+        payload = {"members": []}
+        response = client.post("/lessons/99999/team-attendance", json=payload)
+        assert response.status_code == 404

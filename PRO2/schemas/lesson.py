@@ -74,3 +74,18 @@ class AttendanceResponse(BaseModel):
     lesson_schedule_id: int
     member_id: int
     attendance: bool
+
+class TeamAttendanceRecord(BaseModel):
+    """Jeden záznam v hromadném uložení docházky."""
+    member_id: int
+    attended: bool
+
+class TeamAttendanceUpdate(BaseModel):
+    """Požadavek na uložení docházky pro více členů najednou."""
+    members: list[TeamAttendanceRecord]
+
+class TeamAttendanceResponse(BaseModel):
+    """Souhrnná odpověď po hromadném uložení docházky."""
+    lesson_schedule_id: int
+    updated_count: int
+    message: str
