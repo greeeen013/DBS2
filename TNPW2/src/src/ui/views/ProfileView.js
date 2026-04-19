@@ -10,20 +10,23 @@ import { createDiv } from '../builder/components/div.js';
 import { addActionButton } from '../builder/components/button.js';
 import * as CONST from '../../constants.js';
 
-export function ProfileView({ viewState, dispatch }) {
+export function ProfileView({ viewState, handlers }) {
   const { historyReservations, historyPayments } = viewState;
+  const { onGoToReservations } = handlers;
 
   const container = createSection('container mt-15');
 
   container.appendChild(createTitle(1, 'Můj profil – Historie'));
 
   // Tlačítko zpět na rezervace
-  const btnZpet = addActionButton(
-    () => dispatch({ type: CONST.ENTER_RESERVATION_LIST }),
-    '← Zpět na rezervace',
-    'button--success mb-15',
-  );
-  container.appendChild(btnZpet);
+  if (onGoToReservations) {
+    const btnZpet = addActionButton(
+      onGoToReservations,
+      '← Zpět na rezervace',
+      'button--success mb-15',
+    );
+    container.appendChild(btnZpet);
+  }
 
   // Sekce: Moje rezervace
   container.appendChild(createTitle(2, 'Moje rezervace'));

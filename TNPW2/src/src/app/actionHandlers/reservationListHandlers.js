@@ -1,4 +1,4 @@
-// IR06 – Handler factory pro pohled ReservationListView.
+// IR07 – Handler factory pro pohled ReservationListView.
 //
 // Vrací handlery pro pohled se seznamem rezervací.
 // Odděluje "co je povoleno" (z IR05 capabilities) od "jak to volat" (dispatch).
