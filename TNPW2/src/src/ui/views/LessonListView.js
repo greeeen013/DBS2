@@ -1,24 +1,24 @@
-// Pohled se seznamem lekcí (Student B: Scheduled_Lesson).
-//
-// IR05: Pohled NEROZHUJE, co zobrazit – čte capabilities z viewState.
-// Capabilities jsou plně vypočítány v selectors.js (canOpen, canCancel, …).
-//
 // Akce a tlačítka se zobrazují podle:
-//   lessonCapabilities[lessonIdx].canOpen      → Zveřejnit
-//   lessonCapabilities[lessonIdx].canCancel    → Zrušit
-//   lessonCapabilities[lessonIdx].canClose     → Uzavřít
-//   lessonCapabilities[lessonIdx].canSetAttendance → Nastavit docházku
-//   capabilities.canCreateLesson              → Vytvořit novou lekci
+//   handlers.lessonHandlers[idx].onOpen      → Zveřejnit
+//   handlers.lessonHandlers[idx].onCancel    → Zrušit
+//   handlers.lessonHandlers[idx].onClose     → Uzavřít
+//   handlers.lessonHandlers[idx].onSetAttendance → Nastavit docházku
+//   handlers.onCreateLesson                  → Vytvořit novou lekci
+//   capabilities.isFull                      → (PLNÁ) badge
 
 import { createSection } from '../builder/components/section.js';
 import { createTitle } from '../builder/components/title.js';
 import { createText } from '../builder/components/text.js';
 import { createDiv } from '../builder/components/div.js';
-import { addActionButton } from '../builder/components/button.js';
-import * as CONST from '../../constants.js';
+import { addButton, addActionButton } from '../builder/components/button.js';
 
-export function LessonListView({ viewState, dispatch }) {
-  const { lekce, capabilities = {}, lessonCapabilities = [] } = viewState;
+export function LessonListView({ viewState, handlers }) {
+  const { lekce, lessonCapabilities = [] } = viewState;
+  const {
+    onGoToReservations,
+    onCreateLesson,
+    lessonHandlers = [],
+  } = handlers;
 
   const container = createSection('container mt-15');
 
@@ -28,17 +28,20 @@ export function LessonListView({ viewState, dispatch }) {
   // Ovládací tlačítka nahoře
   const headerActions = createDiv('header-actions mb-15', []);
 
-  const btnZpet = addActionButton(
-    () => dispatch({ type: CONST.ENTER_RESERVATION_LIST }),
-    '← Zpět na rezervace',
-    'button--success me-5',
-  );
-  headerActions.appendChild(btnZpet);
+  // handler existuje → tlačítko se zobrazí, neexistuje → ne
+  if (onGoToReservations) {
+    const btnZpet = addActionButton(
+      onGoToReservations,
+      '← Zpět na rezervace',
+      'button--success me-5',
+    );
+    headerActions.appendChild(btnZpet);
+  }
 
-  // IR05: Tlačítko "Vytvořit" se zobrazí jen pokud selektor povolí (trainer/admin)
-  if (capabilities.canCreateLesson) {
+  // onCreateLesson existuje jen pokud capabilities.canCreateLesson === true (trainer/admin)
+  if (onCreateLesson) {
     const btnCreateLesson = addActionButton(
-      () => dispatch({ type: CONST.ENTER_LESSON_CREATION }),
+      onCreateLesson,
       'Vytvořit novou lekci',
       'button--primary',
     );
@@ -56,8 +59,10 @@ export function LessonListView({ viewState, dispatch }) {
   const karty = createSection('cards');
 
   lekce.forEach((l, idx) => {
-    // IR05: Capabilities pro tuto konkrétní lekci jsou předpočítány selektorem
+    // Capabilities pro tuto konkrétní lekci jsou předpočítány selektorem
     const caps = lessonCapabilities[idx] ?? {};
+    // Handlery pro tuto konkrétní lekci (sestaveny dle caps)
+    const lh = lessonHandlers[idx] ?? {};
     const lessonId = l.lesson_schedule_id ?? l.lesson_id;
 
     const karta = createDiv('card mb-10 p-15', [
@@ -70,10 +75,10 @@ export function LessonListView({ viewState, dispatch }) {
     ]);
 
     // Zveřejnit lekci (DRAFT → OPEN)
-    if (caps.canOpen) {
+    if (lh.onOpen) {
       karta.appendChild(
         addActionButton(
-          () => dispatch({ type: CONST.OPEN_LESSON, payload: { lessonId } }),
+          () => lh.onOpen(lessonId),
           'Zveřejnit',
           'button--primary me-5',
         ),
@@ -81,10 +86,10 @@ export function LessonListView({ viewState, dispatch }) {
     }
 
     // Zrušit lekci (OPEN nebo FULL)
-    if (caps.canCancel) {
+    if (lh.onCancel) {
       karta.appendChild(
         addActionButton(
-          () => dispatch({ type: CONST.CANCEL_LESSON, payload: { lessonId } }),
+          () => lh.onCancel(lessonId),
           'Zrušit lekci',
           'button--danger me-5',
         ),
@@ -92,10 +97,10 @@ export function LessonListView({ viewState, dispatch }) {
     }
 
     // Uzavřít lekci (OPEN, FULL nebo IN_PROGRESS)
-    if (caps.canClose) {
+    if (lh.onClose) {
       karta.appendChild(
         addActionButton(
-          () => dispatch({ type: CONST.CLOSE_LESSON, payload: { lessonId } }),
+          () => lh.onClose(lessonId),
           'Uzavřít lekci',
           'button--warning me-5',
         ),
@@ -103,10 +108,10 @@ export function LessonListView({ viewState, dispatch }) {
     }
 
     // Nastavit docházku (COMPLETED)
-    if (caps.canSetAttendance) {
+    if (lh.onSetAttendance) {
       karta.appendChild(
         addActionButton(
-          () => dispatch({ type: CONST.SET_ATTENDANCE, payload: { lessonId } }),
+          () => lh.onSetAttendance(lessonId),
           'Nastavit docházku',
           'button--secondary',
         ),

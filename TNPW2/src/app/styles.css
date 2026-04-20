@@ -1,0 +1,180 @@
+/*
+ * Styly pro lekce – stav dlaždic (lesson card status colors).
+ *
+ * Každý stav lekce dostane vlastní vizuální identitu:
+ *   .card--draft       → šedá  (připravuje se, neutrální)
+ *   .card--open        → zelená (otevřená, lze se přihlásit)
+ *   .card--full        → oranžová (plná kapacita, přeplněná)
+ *   .card--in-progress → modrá (lekce právě probíhá)
+ *   .card--completed   → fialová (lekce dokončena)
+ *   .card--cancelled   → červená (stornována)
+ *
+ * Stav se propaguje přes data-status atribut a CSS třídu .card--*
+ * nastavenou v createLessonCard() (builder/components/lessonCard.js).
+ * Pohled se tak mění čistě v CSS bez jakékoliv logiky v HTML.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Základní karta lekce                                               */
+/* ------------------------------------------------------------------ */
+
+.lesson-card {
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.lesson-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.lesson-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.lesson-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.lesson-card__capacity,
+.lesson-card__time {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.lesson-card__actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Badge (stav) – malý štítek vedle názvu lekce                      */
+/* ------------------------------------------------------------------ */
+
+[class*="lesson-card__badge"] {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ */
+/*  DRAFT – šedá (připravuje se)                                       */
+/* ------------------------------------------------------------------ */
+
+.card--draft {
+  background-color: #2c2c2c;
+  border-color: #555;
+}
+
+.badge--draft {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  OPEN – zelená (otevřená, přihlášení povoleno)                      */
+/* ------------------------------------------------------------------ */
+
+.card--open {
+  background-color: #1a2e1a;
+  border-color: #2a9d3e;
+}
+
+.badge--open {
+  background-color: #2a9d3e;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  FULL – oranžová (plná kapacita)                                    */
+/* ------------------------------------------------------------------ */
+
+.card--full {
+  background-color: #2e1f0a;
+  border-color: #e07b00;
+}
+
+.badge--full {
+  background-color: #e07b00;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  IN_PROGRESS – modrá (lekce právě probíhá)                          */
+/* ------------------------------------------------------------------ */
+
+.card--in-progress {
+  background-color: #0a1c2e;
+  border-color: #1a7fc1;
+}
+
+.badge--in-progress {
+  background-color: #1a7fc1;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  COMPLETED – fialová (lekce skončila)                               */
+/* ------------------------------------------------------------------ */
+
+.card--completed {
+  background-color: #1e0a2e;
+  border-color: #8e44ad;
+}
+
+.badge--completed {
+  background-color: #8e44ad;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  CANCELLED – červená (stornována)                                   */
+/* ------------------------------------------------------------------ */
+
+.card--cancelled {
+  background-color: #2e0a0a;
+  border-color: #c0392b;
+  opacity: 0.8;
+}
+
+.badge--cancelled {
+  background-color: #c0392b;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Utility třídy používané v ostatních pohledech                      */
+/* ------------------------------------------------------------------ */
+
+.mb-10 { margin-bottom: 10px; }
+.mb-15 { margin-bottom: 15px; }
+.mt-15 { margin-top: 15px; }
+.me-5  { margin-right: 5px; }
+.p-15  { padding: 15px; }
+
+.text-muted   { color: #aaa; }
+.text-success { color: #2a9d3e; }
+.lead         { font-size: 1.1rem; }
+
+.header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cards          { display: flex; flex-direction: column; }
+
+/* Tlačítka (doplněk k Bootstrap pro naše pojmenování) */
+.button--primary   { background-color: #0d6efd; border-color: #0d6efd; color: #fff; }
+.button--success   { background-color: #198754; border-color: #198754; color: #fff; }
+.button--danger    { background-color: #dc3545; border-color: #dc3545; color: #fff; }
+.button--warning   { background-color: #ffc107; border-color: #ffc107; color: #000; }
+.button--secondary { background-color: #6c757d; border-color: #6c757d; color: #fff; }

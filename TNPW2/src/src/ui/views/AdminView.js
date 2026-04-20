@@ -11,18 +11,21 @@ import { addActionButton } from '../builder/components/button.js';
 import { createElement } from '../builder/createElement.js';
 import * as CONST from '../../constants.js';
 
-export function AdminView({ viewState, dispatch }) {
+export function AdminView({ viewState, handlers }) {
   const { pendingPayments } = viewState;
+  const { onGoToReservations, onApprovePayment, onRejectPayment } = handlers;
 
   const container = createSection('container mt-15');
   container.appendChild(createTitle(1, 'Admin – čekající platby'));
 
-  const btnZpet = addActionButton(
-    () => dispatch({ type: CONST.ENTER_RESERVATION_LIST }),
-    '← Zpět na rezervace',
-    'button--success mb-15',
-  );
-  container.appendChild(btnZpet);
+  if (onGoToReservations) {
+    const btnZpet = addActionButton(
+      onGoToReservations,
+      '← Zpět na rezervace',
+      'button--success mb-15',
+    );
+    container.appendChild(btnZpet);
+  }
 
   if (pendingPayments.length === 0) {
     container.appendChild(createText(['Žádné čekající platby.'], 'lead'));
@@ -60,18 +63,22 @@ export function AdminView({ viewState, dispatch }) {
     });
 
     const tdAkce = createElement('td');
-    const btnSchvalit = addActionButton(
-      () => dispatch({ type: CONST.APPROVE_PAYMENT, payload: { paymentId: platba.payment_id } }),
-      'Schválit',
-      'button--primary btn-sm',
-    );
-    const btnZamitnut = addActionButton(
-      () => dispatch({ type: CONST.REJECT_PAYMENT, payload: { paymentId: platba.payment_id } }),
-      'Zamítnout',
-      'button--danger btn-sm',
-    );
-    tdAkce.appendChild(btnSchvalit);
-    tdAkce.appendChild(btnZamitnut);
+    if (onApprovePayment) {
+      const btnSchvalit = addActionButton(
+        () => onApprovePayment(platba.payment_id),
+        'Schválit',
+        'button--primary btn-sm',
+      );
+      tdAkce.appendChild(btnSchvalit);
+    }
+    if (onRejectPayment) {
+      const btnZamitnut = addActionButton(
+        () => onRejectPayment(platba.payment_id),
+        'Zamítnout',
+        'button--danger btn-sm',
+      );
+      tdAkce.appendChild(btnZamitnut);
+    }
     row.appendChild(tdAkce);
 
     tbody.appendChild(row);
