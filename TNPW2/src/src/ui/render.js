@@ -17,6 +17,7 @@ import { createSuccessNotification, createErrorNotification } from './builder/la
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
 import { addActionButton } from './builder/components/button.js';
+import { createHandlers } from '../app/actionHandlers/createHandlers.js';
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
@@ -55,6 +56,8 @@ export function render(root, state, dispatch) {
 
   const viewState = selectViewState(state);
 
+  const handlers = createHandlers(dispatch, viewState);
+
   // Uživatelská lišta – zobrazí se na všech pohledech kromě přihlašovací stránky
   if (state.auth.memberId && viewState.type !== CONST.AUTH_VIEW) {
     root.appendChild(createUserHeader(state.auth, dispatch));
@@ -69,14 +72,13 @@ export function render(root, state, dispatch) {
     case 'ERROR':
       view = ErrorView({
         message: viewState.message,
-        handlers: {
-          onContinue: () => dispatch({ type: CONST.RECOVER_FROM_ERROR }),
-        },
+        handlers,
       });
       break;
 
     case CONST.RESERVATION_LIST:
-      view = ReservationListView({ viewState, dispatch });
+      // handlers obsahuje onGoToPayments, onGoToLessons, reservationHandlers
+      view = ReservationListView({ viewState, handlers });
       break;
 
     case CONST.PAYMENT_VIEW:
@@ -84,11 +86,13 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.LESSON_LIST:
-      view = LessonListView({ viewState, dispatch });
+      //handlers obsahuje onCreateLesson, onGoToReservations, lessonHandlers[]
+      view = LessonListView({ viewState, handlers });
       break;
 
     case CONST.LESSON_CREATION_VIEW:
-      view = LessonCreationView({ viewState, dispatch });
+      // handlers obsahuje onSubmit, onCancel
+      view = LessonCreationView({ viewState, handlers });
       break;
 
     case CONST.PROFILE_VIEW:

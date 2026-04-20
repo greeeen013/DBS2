@@ -4,6 +4,18 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
+class Employee(Base):
+    __tablename__ = "employee"
+    employee_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+class LessonType(Base):
+    __tablename__ = "lesson_type"
+    lesson_type_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+class LessonTemplate(Base):
+    __tablename__ = "lesson_template"
+    lesson_template_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
 class LessonSchedule(Base):
     """ORM mapování tabulky 'Lesson_schedule'."""
     __tablename__ = "lesson_schedule"

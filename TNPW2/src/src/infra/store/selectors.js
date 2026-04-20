@@ -2,6 +2,9 @@
 //
 // Selektory vypočítávají odvozené hodnoty ze stavu a capabilities pro UI.
 // Vzor přejat z prepare/selectors.js – odděluje logiku "co zobrazit" od stavu.
+//
+// IR05: Všechny capabilities jsou počítány čistými funkcemi ze stavu –
+// UI pouze čte výsledek, nerozhoduje samo o sobě, co zobrazit.
 
 import * as CONST from '../../constants.js';
 import * as STATUS from '../../statuses.js';
@@ -24,7 +27,7 @@ export function selectCreditBalance(state) {
   return state.creditBalance;
 }
 
-// --- Capability selektory ---
+// --- Capability selektory – Rezervace ---
 
 export function canConfirmReservation(rezervace) {
   return rezervace.status === 'CREATED';
@@ -42,6 +45,87 @@ export function selectIsAdmin(state) {
   return state.auth.role === 'admin';
 }
 
+// --- IR05: Capability selektory – Lekce ---
+// Čisté funkce: nemodifikují stav, neinteragují s DOM.
+// Role 'trainer' nebo 'admin' = oprávněný lektor.
+
+function isTrainerOrAdmin(state) {
+  const role = state.auth?.role;
+  return role === 'trainer' || role === 'admin';
+}
+
+/**
+ * canCreateLesson – trenér/admin může vytvořit novou lekci.
+ */
+export function canCreateLesson(state) {
+  return isTrainerOrAdmin(state);
+}
+
+/**
+ * canOpenLesson – lekce se může zveřejnit pouze ze stavu DRAFT.
+ * (V DB je stav uložen jako 'DRAFT'; UI/API ho nazývá 'CREATED'.)
+ */
+export function canOpenLesson(lekce, state) {
+  return isTrainerOrAdmin(state) && lekce.status === 'DRAFT';
+}
+
+/**
+ * canCancelLesson – trenér/admin může zrušit otevřenou nebo plnou lekci.
+ */
+export function canCancelLesson(lekce, state) {
+  return isTrainerOrAdmin(state) &&
+    (lekce.status === 'OPEN' || lekce.status === 'FULL');
+}
+
+/**
+ * canCloseLesson – trenér/admin může ukončit lekci (přesun do IN_PROGRESS/COMPLETED).
+ */
+export function canCloseLesson(lekce, state) {
+  return isTrainerOrAdmin(state) &&
+    (lekce.status === 'OPEN' || lekce.status === 'FULL' || lekce.status === 'IN_PROGRESS');
+}
+
+/**
+ * canSetAttendance – docházku lze nastavit jen na dokončené lekci.
+ */
+export function canSetAttendance(lekce, state) {
+  return isTrainerOrAdmin(state) && lekce.status === 'COMPLETED';
+}
+
+/**
+ * isLessonFull – lekce je plná, pokud počet registrovaných dosáhl kapacity.
+ */
+export function isLessonFull(lekce) {
+  const registered = lekce.registered_members ?? 0;
+  const capacity = lekce.maximal_capacity ?? Infinity;
+  return registered >= capacity;
+}
+
+// --- IR05: Filtrační selektory – Lekce ---
+
+/**
+ * selectOpenLessons – vrátí jen lekce se stavem OPEN.
+ */
+export function selectOpenLessons(state) {
+  return selectLessons(state).filter((l) => l.status === 'OPEN');
+}
+
+/**
+ * selectAvailableLessons – lekce OPEN a zároveň s volnou kapacitou.
+ */
+export function selectAvailableLessons(state) {
+  return selectOpenLessons(state).filter((l) => !isLessonFull(l));
+}
+
+/**
+ * selectLessonById – najde lekci podle ID.
+ */
+export function selectLessonById(state, lessonId) {
+  return selectLessons(state).find(
+    (l) => (l.lesson_schedule_id ?? l.lesson_id) === lessonId,
+  ) ?? null;
+}
+
 // --- View selektory ---
 
 export function selectReservationListView(state) {
@@ -54,9 +138,14 @@ export function selectReservationListView(state) {
     zustatek,
     capabilities: {
       canGoToPayments: true,
-      canConfirm: true,   // Podmínka závisí na konkrétní rezervaci, ne na celém stavu
+      canConfirm: true,
       canCancel: true,
     },
+    reservationCapabilities: rezervace.map((r) => ({
+      reservationId: r.reservation_id,
+      canConfirm: canConfirmReservation(r),
+      canCancel: canCancelReservation(r),
+    })),
   };
 }
 
@@ -82,8 +171,19 @@ export function selectLessonListView(state) {
     type: CONST.LESSON_LIST,
     lekce,
     capabilities: {
+      // IR05: Globální capabilities závisí na roli, ne na konkrétní lekci
+      canCreateLesson: canCreateLesson(state),
       canGoToReservations: true,
     },
+    // IR05: Per-lekce capabilities – UI je čte, nerozhoduje samo
+    lessonCapabilities: lekce.map((l) => ({
+      lessonId: l.lesson_schedule_id ?? l.lesson_id,
+      canOpen: canOpenLesson(l, state),
+      canCancel: canCancelLesson(l, state),
+      canClose: canCloseLesson(l, state),
+      canSetAttendance: canSetAttendance(l, state),
+      isFull: isLessonFull(l),
+    })),
   };
 }
 
