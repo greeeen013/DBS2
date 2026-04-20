@@ -11,8 +11,9 @@ import { addActionButton } from '../builder/components/button.js';
 import { createElement } from '../builder/createElement.js';
 import * as CONST from '../../constants.js';
 
-export function PaymentView({ viewState, dispatch }) {
+export function PaymentView({ viewState, handlers }) {
   const { platby, zustatek } = viewState;
+  const { onGoToReservations, onSubmitPayment } = handlers;
 
   const container = createSection('container mt-15');
 
@@ -41,7 +42,9 @@ export function PaymentView({ viewState, dispatch }) {
         vstup.focus();
         return;
       }
-      dispatch({ type: CONST.CREATE_PAYMENT, payload: { amount: castka } });
+      if (onSubmitPayment) {
+        onSubmitPayment(castka);
+      }
     },
     'Dobít kredity',
     'button--primary',
@@ -53,12 +56,14 @@ export function PaymentView({ viewState, dispatch }) {
   container.appendChild(formDiv);
 
   // Tlačítko zpět na rezervace
-  const btnZpet = addActionButton(
-    () => dispatch({ type: CONST.ENTER_RESERVATION_LIST }),
-    '← Zpět na rezervace',
-    'button--success mb-15',
-  );
-  container.appendChild(btnZpet);
+  if (onGoToReservations) {
+    const btnZpet = addActionButton(
+      onGoToReservations,
+      '← Zpět na rezervace',
+      'button--success mb-15',
+    );
+    container.appendChild(btnZpet);
+  }
 
   return container;
 }

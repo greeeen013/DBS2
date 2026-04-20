@@ -1,4 +1,4 @@
-// Unit testy pro IR06 – Renderovací logika (View composition).
+// Unit testy pro IR07 – Handlery a vazba UI → akce.
 //
 // Testují, že:
 //   • createHandlers() vrací správnou sadu handlerů dle viewState.type
@@ -75,7 +75,7 @@ function makeTrackingDispatch() {
 // ---------------------------------------------------------------------------
 
 export function testIR06() {
-  console.log('\n[IR06] Testy renderovací logiky (createHandlers):');
+  console.log('\n[IR07] Testy renderovací logiky (createHandlers):');
 
   // --- createHandlers: LESSON_LIST vrátí handlers objekt s onGoToReservations ---
   const lessonListVS = makeLessonListView({ canCreateLesson: true });
@@ -247,5 +247,5 @@ export function testIR06() {
   assert(getLessonStatusLabel('OPEN', true)  === 'PLNÁ',
     'getLessonStatusLabel: OPEN + isFull=true → PLNÁ');
 
-  console.log('[IR06] Všechny testy renderovací logiky prošly ✓');
+  console.log('[IR07] Všechny testy renderovací logiky prošly ✓');
 }

@@ -15,6 +15,8 @@ from schemas.lesson import (
     AttendanceUpdate,
     AttendanceResponse,
     LessonAttendeeResponse,
+    TeamAttendanceUpdate,
+    TeamAttendanceResponse,
 )
 
 router = APIRouter(prefix="/lessons", tags=["Lekce"])
@@ -28,7 +30,6 @@ def get_lessons(db: Session = Depends(get_db)):
 def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
     """
     Vrátí detail jedné konkrétní lekce včetně počtu registrovaných.
-    Potřebné pro UI trenéra (zjistit obsazenost, stav, čas lekce).
     """
     lesson = db.get(LessonSchedule, lesson_id)
     if not lesson:
@@ -60,8 +61,6 @@ def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
 def get_lesson_attendees(lesson_id: int, db: Session = Depends(get_db)):
     """
     Vrátí seznam registrovaných členů na konkrétní lekci.
-    Klíčový endpoint pro trenéra: zjistí, kdo je na lekci zapsán,
-    jaký je stav rezervace a zda se člen zúčastnil (attendance).
     """
     lesson = db.get(LessonSchedule, lesson_id)
     if not lesson:
@@ -136,4 +135,33 @@ def set_attendance(lesson_id: int, data: AttendanceUpdate, db: Session = Depends
         "lesson_schedule_id": reservation.lesson_schedule_id,
         "member_id": reservation.member_id,
         "attendance": reservation.attendance
+    }
+
+@router.post("/{lesson_id}/team-attendance", response_model=TeamAttendanceResponse)
+def set_team_attendance(lesson_id: int, data: TeamAttendanceUpdate, db: Session = Depends(get_db)):
+    """
+    Hromadný zápis docházky pro celý tým (všechny účastníky) najednou.
+    Trenér po skončení lekce odešle seznam všech, kdo se zúčastnili.
+    """
+    lesson = db.get(LessonSchedule, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+
+    updated_count = 0
+    for record in data.members:
+        reservation = db.query(Reservation).filter(
+            Reservation.lesson_schedule_id == lesson_id,
+            Reservation.member_id == record.member_id
+        ).first()
+
+        if reservation:
+            reservation.attendance = record.attended
+            updated_count += 1
+
+    db.commit()
+
+    return {
+        "lesson_schedule_id": lesson_id,
+        "updated_count": updated_count,
+        "message": f"Docházka úspěšně uložena pro {updated_count} členů."
     }

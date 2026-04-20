@@ -1,7 +1,7 @@
-// IR06 – Centrální továrna handlerů (Handler factory).
+// IR07 – Centrální továrna handlerů (Handler factory).
 //
 // Zodpovědnost: na základě viewState.type vrátí správnou sadu handlerů.
-// Odděluje "co zobrazit" (IR05 selektory) od "jak se zobrazí" (IR06 render).
+// Odděluje "co zobrazit" (IR05 selektory) od "jak reagovat na interakci" (IR07).
 //
 // Vzor přejat z prepare/app/actionHandlers/createHandlers.js –
 // tam je pojmenováno createHandlers(dispatch, viewState).
@@ -15,6 +15,12 @@
 import { lessonListHandlers } from './lessonListHandlers.js';
 import { lessonCreationHandlers } from './lessonCreationHandlers.js';
 import { reservationListHandlers } from './reservationListHandlers.js';
+import { paymentHandlers } from './paymentHandlers.js';
+import { profileHandlers } from './profileHandlers.js';
+import { adminHandlers } from './adminHandlers.js';
+import { authHandlers } from './authHandlers.js';
+import { userHeaderHandlers } from './userHeaderHandlers.js';
+import { errorHandlers } from './errorHandlers.js';
 import * as CONST from '../../constants.js';
 
 /**
@@ -26,6 +32,9 @@ import * as CONST from '../../constants.js';
  */
 export function createHandlers(dispatch, viewState) {
   switch (viewState.type) {
+    case 'ERROR':
+      return errorHandlers(dispatch, viewState);
+
     case CONST.LESSON_LIST:
       return lessonListHandlers(dispatch, viewState);
 
@@ -35,9 +44,34 @@ export function createHandlers(dispatch, viewState) {
     case CONST.RESERVATION_LIST:
       return reservationListHandlers(dispatch, viewState);
 
-    // Pro ostatní pohledy (AUTH_VIEW, ADMIN_VIEW atd.) vrátíme prázdný objekt –
-    // ty si stále předávají dispatch přímo (nejsou součástí IR06 odpovědnosti)
+    case CONST.PAYMENT_VIEW:
+      return paymentHandlers(dispatch, viewState);
+
+    case CONST.PROFILE_VIEW:
+      return profileHandlers(dispatch, viewState);
+
+    case CONST.ADMIN_VIEW:
+      return adminHandlers(dispatch, viewState);
+
+    case CONST.AUTH_VIEW:
+      return authHandlers(dispatch, viewState);
+
+    // Pro meta-pohledy (LOADING, ERROR) vrátíme prázdný objekt –
+    // nemají interaktivní prvky řízené handlery
     default:
       return {};
   }
+}
+
+/**
+ * Vytvoří handlery pro uživatelskou navigační lištu.
+ * Volá se odděleně od createHandlers, protože navbar je společný
+ * pro všechny pohledy (není vázán na viewState.type).
+ *
+ * @param {Function} dispatch - Dispatchovací funkce z createDispatcher
+ * @param {Object}   auth     - Autentizační údaje uživatele
+ * @returns {Object}          - Handlery pro navigační lištu
+ */
+export function createHeaderHandlers(dispatch, auth) {
+  return userHeaderHandlers(dispatch, auth);
 }

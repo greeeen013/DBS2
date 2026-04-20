@@ -1,4 +1,4 @@
-// IR06 – Handler factory pro pohled LessonListView.
+// IR07 – Handler factory pro pohled LessonListView.
 //
 // Vrací objekt handlerů sestavený POUZE z akcí, které jsou povoleny
 // dle capabilities předaných z IR05 selektoru.

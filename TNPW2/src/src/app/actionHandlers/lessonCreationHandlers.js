@@ -1,4 +1,4 @@
-// IR06 – Handler factory pro pohled LessonCreationView.
+// IR07 – Handler factory pro pohled LessonCreationView.
 //
 // Vytváří handlery pro formulář tvorby lekce.
 // Pohled dostane jen funkce (onSubmit, onCancel) – neví nic o konkrétních
