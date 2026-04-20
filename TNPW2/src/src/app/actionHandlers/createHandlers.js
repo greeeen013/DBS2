@@ -18,6 +18,7 @@ import { reservationListHandlers } from './reservationListHandlers.js';
 import { paymentHandlers } from './paymentHandlers.js';
 import { profileHandlers } from './profileHandlers.js';
 import { adminHandlers } from './adminHandlers.js';
+import { permitsHandlers } from './permitsHandlers.js';
 import { authHandlers } from './authHandlers.js';
 import { userHeaderHandlers } from './userHeaderHandlers.js';
 import { errorHandlers } from './errorHandlers.js';
@@ -52,6 +53,9 @@ export function createHandlers(dispatch, viewState) {
 
     case CONST.ADMIN_VIEW:
       return adminHandlers(dispatch, viewState);
+
+    case CONST.PERMITS_VIEW:
+      return permitsHandlers(dispatch, viewState);
 
     case CONST.AUTH_VIEW:
       return authHandlers(dispatch, viewState);

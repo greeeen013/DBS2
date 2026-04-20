@@ -212,6 +212,16 @@ export function selectAdminView(state) {
   };
 }
 
+export function selectPermitsView(state) {
+  return {
+    type: CONST.PERMITS_VIEW,
+    tariffs: state.tariffs ?? [],
+    memberships: state.memberships ?? [],
+    creditBalance: state.creditBalance ?? 0,
+    isAdmin: state.auth?.role === 'admin',
+  };
+}
+
 /**
  * Hlavní selektor – vrací viewState na základě aktuálního UI módu.
  * Vzor totožný s prepare/selectors.js selectViewState().
@@ -242,6 +252,8 @@ export function selectViewState(state) {
       return selectAuthView(state);
     case CONST.ADMIN_VIEW:
       return selectAdminView(state);
+    case CONST.PERMITS_VIEW:
+      return selectPermitsView(state);
     default:
       return { type: 'ERROR', message: 'Neznámý pohled aplikace.' };
   }

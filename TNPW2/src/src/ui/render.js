@@ -13,6 +13,7 @@ import { renderAuthView } from './views/AuthView.js';
 import { AdminView } from './views/AdminView.js';
 import { LessonListView } from './views/LessonListView.js';
 import { LessonCreationView } from './views/LessonCreationView.js';
+import { PermitsView } from './views/PermitsView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
@@ -44,6 +45,13 @@ function createUserHeader(auth, dispatch) {
     const trainerBadge = createElement('span', { className: 'badge bg-info text-dark mt-1' }, ['Trenér']);
     inner.appendChild(trainerBadge);
   }
+
+  const btnPermits = addActionButton(
+    () => dispatch({ type: CONST.ENTER_PERMITS }),
+    'Permanentky',
+    'button--secondary btn-sm mt-1',
+  );
+  inner.appendChild(btnPermits);
 
   const btnLogout = addActionButton(
     () => dispatch({ type: CONST.LOGOUT }),
@@ -106,6 +114,10 @@ export function render(root, state, dispatch) {
 
     case CONST.ADMIN_VIEW:
       view = AdminView({ viewState, handlers });
+      break;
+
+    case CONST.PERMITS_VIEW:
+      view = PermitsView({ viewState, handlers });
       break;
 
     case CONST.AUTH_VIEW:

@@ -7,8 +7,10 @@
 
 from .base import Base
 from .member import Member
+from .tariff import Tariff
+from .membership import Membership
 from .reservation import Reservation
 from .payment import Payment
 from .lesson import LessonSchedule
 
-__all__ = ["Base", "Member", "Reservation", "Payment", "LessonSchedule"]
+__all__ = ["Base", "Member", "Tariff", "Membership", "Reservation", "Payment", "LessonSchedule"]
