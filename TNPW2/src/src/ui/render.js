@@ -40,6 +40,11 @@ function createUserHeader(auth, dispatch) {
     inner.appendChild(btnAdmin);
   }
 
+  if (auth.role === 'trainer') {
+    const trainerBadge = createElement('span', { className: 'badge bg-info text-dark mt-1' }, ['Trenér']);
+    inner.appendChild(trainerBadge);
+  }
+
   const btnLogout = addActionButton(
     () => dispatch({ type: CONST.LOGOUT }),
     'Odhlásit',
