@@ -82,7 +82,7 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.PAYMENT_VIEW:
-      view = PaymentView({ viewState, dispatch });
+      view = PaymentView({ viewState, handlers });
       break;
 
     case CONST.LESSON_LIST:
@@ -96,15 +96,15 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.PROFILE_VIEW:
-      view = ProfileView({ viewState, dispatch });
+      view = ProfileView({ viewState, handlers });
       break;
 
     case CONST.ADMIN_VIEW:
-      view = AdminView({ viewState, dispatch });
+      view = AdminView({ viewState, handlers });
       break;
 
     case CONST.AUTH_VIEW:
-      renderAuthView(root, state, dispatch);
+      renderAuthView(root, state, handlers);
       // Notifikace pro auth view (renderAuthView dělá root.appendChild uvnitř pro AuthView container)
       // Takže view nepotřebujeme nastavovat
       break;
