@@ -1,81 +1,102 @@
-// Pohled: kombinovaná historie přihlášeného člena (IR04).
-//
-// Zobrazuje seznam rezervací a plateb seřazených sestupně dle data
-// (řazení zajišťuje backend – GET /me/history).
-
 import { createSection } from '../builder/components/section.js';
 import { createTitle } from '../builder/components/title.js';
 import { createText } from '../builder/components/text.js';
 import { createDiv } from '../builder/components/div.js';
 import { addActionButton } from '../builder/components/button.js';
-import * as CONST from '../../constants.js';
+import { createElement } from '../builder/createElement.js';
+
+function stavRez(status) {
+  const m = { CREATED: 'Čeká na potvrzení', CONFIRMED: 'Potvrzená', CANCELLED: 'Zrušená', ATTENDED: 'Absolvována' };
+  return m[status] ?? status;
+}
+
+function stavRezClass(status) {
+  const m = { CREATED: 'text-warning', CONFIRMED: 'text-success', CANCELLED: 'text-danger', ATTENDED: 'text-info' };
+  return m[status] ?? 'text-muted';
+}
+
+function stavPlatby(status) {
+  const m = { PENDING: 'Čeká na schválení', COMPLETED: 'Schválená', REJECTED: 'Zamítnutá' };
+  return m[status] ?? status;
+}
+
+function stavPlatbyClass(status) {
+  const m = { PENDING: 'text-warning', COMPLETED: 'text-success', REJECTED: 'text-danger' };
+  return m[status] ?? 'text-muted';
+}
+
+function formatDate(iso) {
+  if (!iso) return '–';
+  return new Date(iso).toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' });
+}
 
 export function ProfileView({ viewState, handlers }) {
   const { historyReservations, historyPayments } = viewState;
   const { onGoToReservations } = handlers;
 
   const container = createSection('container mt-15');
+  container.appendChild(createTitle(1, 'Můj profil'));
 
-  container.appendChild(createTitle(1, 'Můj profil – Historie'));
-
-  // Tlačítko zpět na rezervace
   if (onGoToReservations) {
-    const btnZpet = addActionButton(
-      onGoToReservations,
-      '← Zpět na rezervace',
-      'button--success mb-15',
-    );
-    container.appendChild(btnZpet);
+    container.appendChild(addActionButton(onGoToReservations, '← Zpět na rezervace', 'button--success mb-15'));
   }
 
-  // Sekce: Moje rezervace
-  container.appendChild(createTitle(2, 'Moje rezervace'));
+  // --- Sekce: Moje rezervace ---
+  container.appendChild(createTitle(2, 'Moje přihlášky na lekce'));
 
   if (!historyReservations || historyReservations.length === 0) {
-    container.appendChild(createText(['Žádné rezervace.'], 'text-muted'));
+    container.appendChild(createText(['Zatím žádné přihlášky.'], 'text-muted mb-15'));
   } else {
-    const seznamRezervaci = createSection('reservations-history-list');
+    const seznam = createSection('reservations-history-list mb-15');
+
     historyReservations.forEach((r) => {
-      const datum = r.timestamp_creation
-        ? new Date(r.timestamp_creation).toLocaleString('cs-CZ')
-        : '–';
-      seznamRezervaci.appendChild(
-        createDiv('card mb-5 p-10', [
-          createText([`Lekce #${r.lesson_schedule_id}`], 'mb-0'),
-          createText(
-            [`Stav: ${r.status}`],
-            r.status === 'CONFIRMED' || r.status === 'ATTENDED' ? 'text-success' : 'text-muted',
-          ),
-          createText([`Vytvořeno: ${datum}`], 'text-muted'),
-        ]),
-      );
+      const nazev = r.lesson_name ?? 'Neznámá lekce';
+      const casLekce = r.lesson_start_time
+        ? new Date(r.lesson_start_time).toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })
+        : null;
+      const casRezervace = formatDate(r.timestamp_creation);
+
+      const karta = createDiv('card mb-5 p-10');
+
+      // Řádek: název + status
+      const hlavicka = createDiv('d-flex justify-between align-center mb-3');
+      hlavicka.appendChild(createElement('strong', {}, [nazev]));
+      hlavicka.appendChild(createElement('span', { className: stavRezClass(r.status) }, [stavRez(r.status)]));
+      karta.appendChild(hlavicka);
+
+      if (casLekce) {
+        karta.appendChild(createElement('p', { className: 'text-muted mb-0' }, [`Termín: ${casLekce}`]));
+      }
+      karta.appendChild(createElement('p', { className: 'text-muted mb-0' }, [`Přihlášeno: ${casRezervace}`]));
+
+      seznam.appendChild(karta);
     });
-    container.appendChild(seznamRezervaci);
+
+    container.appendChild(seznam);
   }
 
-  // Sekce: Moje platby
-  container.appendChild(createTitle(2, 'Moje platby'));
+  // --- Sekce: Moje platby ---
+  container.appendChild(createTitle(2, 'Historie plateb'));
 
   if (!historyPayments || historyPayments.length === 0) {
-    container.appendChild(createText(['Žádné platby.'], 'text-muted'));
+    container.appendChild(createText(['Zatím žádné platby.'], 'text-muted'));
   } else {
-    const seznamPlateb = createSection('payments-history-list');
+    const seznam = createSection('payments-history-list');
+
     historyPayments.forEach((p) => {
-      const datum = p.date
-        ? new Date(p.date).toLocaleString('cs-CZ')
-        : '–';
-      seznamPlateb.appendChild(
-        createDiv('card mb-5 p-10', [
-          createText([`${p.amount} Kč – ${p.payment_type}`], 'mb-0'),
-          createText(
-            [`Stav: ${p.status}`],
-            p.status === 'COMPLETED' ? 'text-success' : 'text-muted',
-          ),
-          createText([`Datum: ${datum}`], 'text-muted'),
-        ]),
-      );
+      const datum = formatDate(p.date ?? p.timestamp_creation);
+      const karta = createDiv('card mb-5 p-10');
+
+      const hlavicka = createDiv('d-flex justify-between align-center mb-3');
+      hlavicka.appendChild(createElement('strong', {}, [`${p.amount} Kč – ${p.payment_type ?? 'kredit'}`]));
+      hlavicka.appendChild(createElement('span', { className: stavPlatbyClass(p.status) }, [stavPlatby(p.status)]));
+      karta.appendChild(hlavicka);
+
+      karta.appendChild(createElement('p', { className: 'text-muted mb-0' }, [`Datum: ${datum}`]));
+      seznam.appendChild(karta);
     });
-    container.appendChild(seznamPlateb);
+
+    container.appendChild(seznam);
   }
 
   return container;

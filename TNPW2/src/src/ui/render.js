@@ -13,16 +13,18 @@ import { renderAuthView } from './views/AuthView.js';
 import { AdminView } from './views/AdminView.js';
 import { LessonListView } from './views/LessonListView.js';
 import { LessonCreationView } from './views/LessonCreationView.js';
+import { LessonDetailView } from './views/LessonDetailView.js';
+import { LessonAttendanceView } from './views/LessonAttendanceView.js';
 import { PermitsView } from './views/PermitsView.js';
 import { createSuccessNotification, createErrorNotification } from './builder/layout/notification.js';
 import { createSection } from './builder/components/section.js';
 import { createElement } from './builder/createElement.js';
 import { addActionButton } from './builder/components/button.js';
-import { createHandlers } from '../app/actionHandlers/createHandlers.js';
+import { createHandlers, createHeaderHandlers } from '../app/actionHandlers/createHandlers.js';
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
 
-function createUserHeader(auth, dispatch) {
+function createUserHeader(auth, headerHandlers) {
   const nav = createElement('nav', { className: 'navbar navbar-dark bg-dark px-3 py-2' });
   const inner = createElement('div', { className: 'd-flex flex-column align-items-end ms-auto' });
 
@@ -34,7 +36,7 @@ function createUserHeader(auth, dispatch) {
     const adminBadge = createElement('span', { className: 'badge bg-warning text-dark mt-1' }, ['Admin']);
     inner.appendChild(adminBadge);
     const btnAdmin = addActionButton(
-      () => dispatch({ type: CONST.ENTER_ADMIN_VIEW }),
+      headerHandlers.onGoToAdmin,
       'Správa plateb',
       'button--warning btn-sm mt-1',
     );
@@ -54,7 +56,7 @@ function createUserHeader(auth, dispatch) {
   inner.appendChild(btnPermits);
 
   const btnLogout = addActionButton(
-    () => dispatch({ type: CONST.LOGOUT }),
+    headerHandlers.onLogout,
     'Odhlásit',
     'button--danger btn-sm mt-1',
   );
@@ -73,7 +75,8 @@ export function render(root, state, dispatch) {
 
   // Uživatelská lišta – zobrazí se na všech pohledech kromě přihlašovací stránky
   if (state.auth.memberId && viewState.type !== CONST.AUTH_VIEW) {
-    root.appendChild(createUserHeader(state.auth, dispatch));
+    const headerHandlers = createHeaderHandlers(dispatch, state.auth);
+    root.appendChild(createUserHeader(state.auth, headerHandlers));
   }
 
   let view;
@@ -104,8 +107,15 @@ export function render(root, state, dispatch) {
       break;
 
     case CONST.LESSON_CREATION_VIEW:
-      // handlers obsahuje onSubmit, onCancel
       view = LessonCreationView({ viewState, handlers });
+      break;
+
+    case CONST.LESSON_DETAIL:
+      view = LessonDetailView({ viewState, handlers });
+      break;
+
+    case CONST.LESSON_ATTENDANCE:
+      view = LessonAttendanceView({ viewState, handlers });
       break;
 
     case CONST.PROFILE_VIEW:

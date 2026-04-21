@@ -3,7 +3,7 @@
 import * as STATUS from '../../statuses.js';
 
 export async function closeLesson({ store, api, payload }) {
-    const { lessonId, newStatus } = payload; // 'IN_PROGRESS' nebo 'COMPLETED'
+    const { lessonId, newStatus = 'COMPLETED' } = payload;
 
     store.setState((state) => ({
         ...state,
@@ -11,13 +11,17 @@ export async function closeLesson({ store, api, payload }) {
     }));
 
     try {
-        const result = await api.lessons.updateStatus(lessonId, newStatus);
+        await api.lessons.updateStatus(lessonId, newStatus);
+        const memberId = store.getState().auth.memberId;
+        const [lekce, rezervace] = await Promise.all([
+            api.lessons.getAll(),
+            api.reservations.getAll(memberId),
+        ]);
 
         store.setState((state) => ({
             ...state,
-            lessons: (state.lessons || []).map((l) =>
-                l.lesson_id === result.lesson_id ? result : l
-            ),
+            lessons: lekce,
+            reservations: rezervace,
             ui: {
                 ...state.ui,
                 status: STATUS.RDY,

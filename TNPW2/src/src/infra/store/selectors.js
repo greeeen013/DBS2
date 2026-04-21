@@ -62,43 +62,104 @@ export function canCreateLesson(state) {
 }
 
 /**
- * canOpenLesson – lekce se může zveřejnit pouze ze stavu DRAFT.
- * (V DB je stav uložen jako 'DRAFT'; UI/API ho nazývá 'CREATED'.)
+ * canOpenLesson – admin může zveřejnit jakoukoli DRAFT lekci; trenér jen svou vlastní.
  */
 export function canOpenLesson(lekce, state) {
-  return isTrainerOrAdmin(state) && lekce.status === 'DRAFT';
+  if (lekce.status !== 'DRAFT') return false;
+  if (state.auth?.role === 'admin') return true;
+  if (state.auth?.role === 'trainer') return isOwnLesson(lekce, state);
+  return false;
+}
+
+function isOwnLesson(lekce, state) {
+  return lekce.employee_id === state.auth?.memberId;
 }
 
 /**
- * canCancelLesson – trenér/admin může zrušit otevřenou nebo plnou lekci.
+ * canCancelLesson – admin může zrušit jakoukoli OPEN/FULL lekci; trenér jen svou vlastní.
  */
 export function canCancelLesson(lekce, state) {
-  return isTrainerOrAdmin(state) &&
-    (lekce.status === 'OPEN' || lekce.status === 'FULL');
+  const cancellable = lekce.status === 'OPEN' || lekce.status === 'FULL';
+  if (state.auth?.role === 'admin') return cancellable;
+  if (state.auth?.role === 'trainer') return cancellable && isOwnLesson(lekce, state);
+  return false;
 }
 
 /**
- * canCloseLesson – trenér/admin může ukončit lekci (přesun do IN_PROGRESS/COMPLETED).
+ * canCloseLesson – admin může uzavřít jakoukoli OPEN/FULL/IN_PROGRESS lekci; trenér jen svou vlastní.
  */
 export function canCloseLesson(lekce, state) {
-  return isTrainerOrAdmin(state) &&
-    (lekce.status === 'OPEN' || lekce.status === 'FULL' || lekce.status === 'IN_PROGRESS');
+  const closeable = lekce.status === 'OPEN' || lekce.status === 'FULL' || lekce.status === 'IN_PROGRESS';
+  if (state.auth?.role === 'admin') return closeable;
+  if (state.auth?.role === 'trainer') return closeable && isOwnLesson(lekce, state);
+  return false;
 }
 
 /**
- * canSetAttendance – docházku lze nastavit jen na dokončené lekci.
+ * canSetAttendance – admin může zapsat docházku na jakoukoli COMPLETED lekci; trenér jen svou vlastní.
  */
 export function canSetAttendance(lekce, state) {
-  return isTrainerOrAdmin(state) && lekce.status === 'COMPLETED';
+  if (lekce.status !== 'COMPLETED') return false;
+  if (state.auth?.role === 'admin') return true;
+  if (state.auth?.role === 'trainer') return isOwnLesson(lekce, state);
+  return false;
+}
+
+/**
+ * canReopenLesson – admin může znovu otevřít jakoukoli lekci; trenér jen svou vlastní.
+ * Platí pro stavy COMPLETED, IN_PROGRESS i CANCELLED.
+ */
+export function canReopenLesson(lekce, state) {
+  const reopenable = lekce.status === 'COMPLETED' || lekce.status === 'IN_PROGRESS' || lekce.status === 'CANCELLED';
+  if (state.auth?.role === 'admin') return reopenable;
+  if (state.auth?.role === 'trainer') return reopenable && isOwnLesson(lekce, state);
+  return false;
 }
 
 /**
  * isLessonFull – lekce je plná, pokud počet registrovaných dosáhl kapacity.
  */
 export function isLessonFull(lekce) {
-  const registered = lekce.registered_members ?? 0;
-  const capacity = lekce.maximal_capacity ?? Infinity;
+  const registered = lekce.registered_count ?? lekce.registered_members ?? 0;
+  const capacity = lekce.maximum_capacity ?? lekce.maximal_capacity ?? Infinity;
   return registered >= capacity;
+}
+
+/**
+ * getUserReservationForLesson – najde aktivní rezervaci přihlášeného člena na danou lekci.
+ */
+function getUserReservationForLesson(state, lessonId) {
+  const memberId = state.auth?.memberId;
+  if (!memberId) return null;
+  return (state.reservations ?? []).find(
+    (r) => r.lesson_schedule_id === lessonId &&
+           r.member_id === memberId &&
+           (r.status === 'CREATED' || r.status === 'CONFIRMED')
+  ) ?? null;
+}
+
+/**
+ * canEnrollInLesson – člen nebo trenér (na cizí lekci) se může přihlásit na OPEN lekci,
+ * pokud ještě nemá aktivní rezervaci. Admin se nepřihlašuje. Trenér se nemůže přihlásit
+ * na svou vlastní lekci.
+ */
+export function canEnrollInLesson(lekce, state) {
+  if (state.auth?.role === 'admin') return false;
+  if (state.auth?.role === 'trainer' && isOwnLesson(lekce, state)) return false;
+  if (lekce.status !== 'OPEN') return false;
+  if (isLessonFull(lekce)) return false;
+  const lessonId = lekce.lesson_schedule_id ?? lekce.lesson_id;
+  return getUserReservationForLesson(state, lessonId) === null;
+}
+
+/**
+ * canUnenrollFromLesson – člen nebo trenér se může odhlásit, pokud má aktivní rezervaci.
+ * Admin se neodhlašuje.
+ */
+export function canUnenrollFromLesson(lekce, state) {
+  if (state.auth?.role === 'admin') return false;
+  const lessonId = lekce.lesson_schedule_id ?? lekce.lesson_id;
+  return getUserReservationForLesson(state, lessonId) !== null;
 }
 
 // --- IR05: Filtrační selektory – Lekce ---
@@ -128,13 +189,27 @@ export function selectLessonById(state, lessonId) {
 
 // --- View selektory ---
 
+function enrichWithLesson(reservations, lekce) {
+  return reservations.map((r) => {
+    const lesson = lekce.find(
+      (l) => (l.lesson_schedule_id ?? l.lesson_id) === r.lesson_schedule_id
+    );
+    return {
+      ...r,
+      lesson_name: lesson?.name ?? null,
+      lesson_start_time: lesson?.start_time ?? null,
+    };
+  });
+}
+
 export function selectReservationListView(state) {
   const rezervace = selectReservations(state);
+  const lekce = selectLessons(state);
   const zustatek = selectCreditBalance(state);
 
   return {
     type: CONST.RESERVATION_LIST,
-    rezervace,
+    rezervace: enrichWithLesson(rezervace, lekce),
     zustatek,
     capabilities: {
       canGoToPayments: true,
@@ -165,32 +240,69 @@ export function selectPaymentView(state) {
 }
 
 export function selectLessonListView(state) {
-  const lekce = selectLessons(state);
+  let lekce = selectLessons(state);
+
+  // Enrich lessons with trainer_name and lesson_type_name
+  lekce = lekce.map((l) => {
+    const trainer = (state.trainers ?? []).find((t) => t.employee_id === l.employee_id);
+    const lt = (state.lessonTypes ?? []).find((t) => t.lesson_type_id === l.lesson_type_id);
+    return {
+      ...l,
+      trainer_name: trainer ? `${trainer.name} ${trainer.surname}` : null,
+      lesson_type_name: lt?.name ?? null,
+    };
+  });
+
+  // Sort by start_time ascending (null at end)
+  lekce = [...lekce].sort((a, b) => {
+    if (!a.start_time && !b.start_time) return 0;
+    if (!a.start_time) return 1;
+    if (!b.start_time) return -1;
+    return new Date(a.start_time) - new Date(b.start_time);
+  });
+
+  // Apply lessonFilter
+  const filter = state.lessonFilter ?? 'ALL';
+  if (filter === 'OPEN') {
+    lekce = lekce.filter((l) => l.status === 'OPEN' || l.status === 'FULL');
+  } else if (filter === 'MINE') {
+    lekce = lekce.filter((l) => l.employee_id === state.auth.memberId);
+  }
 
   return {
     type: CONST.LESSON_LIST,
     lekce,
+    lessonFilter: filter,
     capabilities: {
       // IR05: Globální capabilities závisí na roli, ne na konkrétní lekci
       canCreateLesson: canCreateLesson(state),
       canGoToReservations: true,
     },
     // IR05: Per-lekce capabilities – UI je čte, nerozhoduje samo
-    lessonCapabilities: lekce.map((l) => ({
-      lessonId: l.lesson_schedule_id ?? l.lesson_id,
-      canOpen: canOpenLesson(l, state),
-      canCancel: canCancelLesson(l, state),
-      canClose: canCloseLesson(l, state),
-      canSetAttendance: canSetAttendance(l, state),
-      isFull: isLessonFull(l),
-    })),
+    lessonCapabilities: lekce.map((l) => {
+      const lessonId = l.lesson_schedule_id ?? l.lesson_id;
+      const userRes = getUserReservationForLesson(state, lessonId);
+      return {
+        lessonId,
+        canOpen: canOpenLesson(l, state),
+        canCancel: canCancelLesson(l, state),
+        canClose: canCloseLesson(l, state),
+        canReopen: canReopenLesson(l, state),
+        canSetAttendance: canSetAttendance(l, state),
+        isFull: isLessonFull(l),
+        canEnroll: canEnrollInLesson(l, state),
+        canUnenroll: canUnenrollFromLesson(l, state),
+        userReservationId: userRes ? userRes.reservation_id : null,
+      };
+    }),
   };
 }
 
 export function selectProfileView(state) {
+  const lekce = selectLessons(state);
   return {
     type: CONST.PROFILE_VIEW,
-    historyReservations: state.history?.reservations ?? [],
+    historyReservations: enrichWithLesson(state.history?.reservations ?? [], lekce),
     historyPayments: state.history?.payments ?? [],
     capabilities: {
       canGoToReservations: true,
@@ -244,8 +356,57 @@ export function selectViewState(state) {
       return selectPaymentView(state);
     case CONST.LESSON_LIST:
       return selectLessonListView(state);
+    case CONST.LESSON_DETAIL: {
+      const rawDetail = state.lessonDetail ?? null;
+      // Enrich detail with lesson_type_name
+      const detail = rawDetail ? (() => {
+        const lt = (state.lessonTypes ?? []).find((t) => t.lesson_type_id === rawDetail.lesson_type_id);
+        return { ...rawDetail, lesson_type_name: lt?.name ?? null };
+      })() : null;
+      let caps = {
+        canEnroll: false, canUnenroll: false, userReservationId: null,
+        canReopen: false, canOpen: false, canCancel: false, canClose: false, canSetAttendance: false,
+      };
+      if (detail) {
+        const lessonId = detail.lesson_schedule_id;
+        const userRes = getUserReservationForLesson(state, lessonId);
+        caps = {
+          canEnroll: canEnrollInLesson(detail, state),
+          canUnenroll: canUnenrollFromLesson(detail, state),
+          userReservationId: userRes ? userRes.reservation_id : null,
+          canReopen: canReopenLesson(detail, state),
+          canOpen: canOpenLesson(detail, state),
+          canCancel: canCancelLesson(detail, state),
+          canClose: canCloseLesson(detail, state),
+          canSetAttendance: canSetAttendance(detail, state),
+        };
+      }
+      return {
+        type: CONST.LESSON_DETAIL,
+        lesson: detail,
+        auth: { role: state.auth.role, memberId: state.auth.memberId },
+        ...caps,
+      };
+    }
     case CONST.LESSON_CREATION_VIEW:
-      return { type: CONST.LESSON_CREATION_VIEW };
+      return {
+        type: CONST.LESSON_CREATION_VIEW,
+        trainers: state.trainers ?? [],
+        lessonTemplates: state.lessonTemplates ?? [],
+        auth: {
+          role: state.auth.role,
+          memberId: state.auth.memberId,
+          name: state.auth.name,
+          surname: state.auth.surname,
+        },
+      };
+    case CONST.LESSON_ATTENDANCE:
+      return {
+        type: CONST.LESSON_ATTENDANCE,
+        lessonId: state.lessonAttendance?.lessonId ?? null,
+        lessonName: state.lessonAttendance?.lessonName ?? null,
+        attendees: state.lessonAttendance?.attendees ?? [],
+      };
     case CONST.PROFILE_VIEW:
       return selectProfileView(state);
     case CONST.AUTH_VIEW:

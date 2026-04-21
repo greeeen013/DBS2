@@ -37,6 +37,20 @@ export function createInitialState() {
     // Admin: čekající platby ke schválení
     pendingPayments: [],
 
+    // Data pro formulář vytváření lekce
+    trainers: [],
+    lessonTemplates: [],
+    lessonTypes: [],
+
+    // Detail konkrétní lekce
+    lessonDetail: null,
+
+    // Docházka lekce – { lessonId, lessonName, attendees }
+    lessonAttendance: null,
+
+    // Filtr seznamu lekcí: 'ALL' | 'OPEN' | 'MINE'
+    lessonFilter: 'ALL',
+
     // Permanentky
     tariffs: [],
     memberships: [],

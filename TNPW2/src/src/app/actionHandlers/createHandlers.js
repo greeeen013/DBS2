@@ -14,6 +14,8 @@
 
 import { lessonListHandlers } from './lessonListHandlers.js';
 import { lessonCreationHandlers } from './lessonCreationHandlers.js';
+import { lessonDetailHandlers } from './lessonDetailHandlers.js';
+import { lessonAttendanceHandlers } from './lessonAttendanceHandlers.js';
 import { reservationListHandlers } from './reservationListHandlers.js';
 import { paymentHandlers } from './paymentHandlers.js';
 import { profileHandlers } from './profileHandlers.js';
@@ -41,6 +43,12 @@ export function createHandlers(dispatch, viewState) {
 
     case CONST.LESSON_CREATION_VIEW:
       return lessonCreationHandlers(dispatch, viewState);
+
+    case CONST.LESSON_DETAIL:
+      return lessonDetailHandlers(dispatch, viewState);
+
+    case CONST.LESSON_ATTENDANCE:
+      return lessonAttendanceHandlers(dispatch, viewState);
 
     case CONST.RESERVATION_LIST:
       return reservationListHandlers(dispatch, viewState);

@@ -33,6 +33,8 @@ export const CLEAR_NOTIFICATION     = 'CLEAR_NOTIFICATION';
 // Student B – navigace lekce
 export const ENTER_LESSON_LIST      = 'ENTER_LESSON_LIST';
 export const ENTER_LESSON_CREATION  = 'ENTER_LESSON_CREATION';
+export const LESSON_DETAIL          = 'LESSON_DETAIL';
+export const ENTER_LESSON_DETAIL    = 'ENTER_LESSON_DETAIL';
 
 // Permanentky – akce
 export const ENTER_PERMITS          = 'ENTER_PERMITS';
@@ -47,3 +49,12 @@ export const CANCEL_LESSON   = 'CANCEL_LESSON';   // Trenér zruší lekci, stor
 export const UPDATE_CAPACITY = 'UPDATE_CAPACITY'; // Aktualizace obsazenosti (přechod do FULL)
 export const CLOSE_LESSON    = 'CLOSE_LESSON';    // Lekce začala / skončila
 export const SET_ATTENDANCE  = 'SET_ATTENDANCE';  // Nastavení docházky
+export const ENROLL_LESSON   = 'ENROLL_LESSON';   // Člen se přihlásí na lekci
+export const UNENROLL_LESSON = 'UNENROLL_LESSON'; // Člen se odhlásí z lekce
+export const REOPEN_LESSON   = 'REOPEN_LESSON';   // Trenér znovu otevře uzavřenou lekci
+
+// --- Docházka a filtry lekcí ---
+export const LESSON_ATTENDANCE       = 'LESSON_ATTENDANCE';
+export const ENTER_LESSON_ATTENDANCE = 'ENTER_LESSON_ATTENDANCE';
+export const SAVE_TEAM_ATTENDANCE    = 'SAVE_TEAM_ATTENDANCE';
+export const SET_LESSON_FILTER       = 'SET_LESSON_FILTER';

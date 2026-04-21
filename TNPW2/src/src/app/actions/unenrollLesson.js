@@ -1,7 +1,8 @@
 import * as STATUS from '../../statuses.js';
 
-export async function cancelLesson({ store, api, payload }) {
-  const { lessonId } = payload;
+export async function unenrollLesson({ store, api, payload }) {
+  const { reservationId } = payload;
+  const memberId = store.getState().auth.memberId;
 
   store.setState((state) => ({
     ...state,
@@ -9,8 +10,9 @@ export async function cancelLesson({ store, api, payload }) {
   }));
 
   try {
-    await api.lessons.updateStatus(lessonId, 'CANCELLED');
-    const memberId = store.getState().auth.memberId;
+    await api.reservations.updateStatus(reservationId, 'CANCELLED');
+
+    // Refresh lessons list and reservations to reflect updated enrollment count
     const [lekce, rezervace] = await Promise.all([
       api.lessons.getAll(),
       api.reservations.getAll(memberId),
@@ -23,7 +25,7 @@ export async function cancelLesson({ store, api, payload }) {
       ui: {
         ...state.ui,
         status: STATUS.RDY,
-        notification: { type: STATUS.OK, message: 'Lekce byla stornována.' },
+        notification: { type: STATUS.OK, message: 'Odhlášení z lekce proběhlo úspěšně.' },
       },
     }));
   } catch (error) {
@@ -32,7 +34,7 @@ export async function cancelLesson({ store, api, payload }) {
       ui: {
         ...state.ui,
         status: STATUS.RDY,
-        notification: { type: STATUS.WAR, message: error.message },
+        notification: { type: STATUS.WAR, message: error.message ?? 'Odhlášení z lekce selhalo.' },
       },
     }));
   }

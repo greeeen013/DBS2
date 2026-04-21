@@ -10,13 +10,15 @@ import { createSection } from '../builder/components/section.js';
 import { createTitle } from '../builder/components/title.js';
 import { createText } from '../builder/components/text.js';
 import { createDiv } from '../builder/components/div.js';
-import { addButton, addActionButton } from '../builder/components/button.js';
+import { addActionButton } from '../builder/components/button.js';
+import { createLessonCard } from '../builder/components/lessonCard.js';
 
 export function LessonListView({ viewState, handlers }) {
-  const { lekce, lessonCapabilities = [] } = viewState;
+  const { lekce, lessonCapabilities = [], capabilities = {}, lessonFilter = 'ALL' } = viewState;
   const {
     onGoToReservations,
     onCreateLesson,
+    onSetFilter,
     lessonHandlers = [],
   } = handlers;
 
@@ -50,6 +52,23 @@ export function LessonListView({ viewState, handlers }) {
 
   container.appendChild(headerActions);
 
+  // Filtrovací tlačítka
+  const filterRow = createDiv('filter-row mb-10');
+  const filters = [
+    { key: 'ALL', label: 'Vše' },
+    { key: 'OPEN', label: 'Otevřené' },
+    ...(capabilities.canCreateLesson ? [{ key: 'MINE', label: 'Moje lekce' }] : []),
+  ];
+  filters.forEach(({ key, label }) => {
+    const btn = addActionButton(
+      () => onSetFilter?.(key),
+      label,
+      `button--secondary btn-sm me-5${lessonFilter === key ? ' active' : ''}`,
+    );
+    filterRow.appendChild(btn);
+  });
+  container.appendChild(filterRow);
+
   // Seznam lekcí
   if (!lekce || lekce.length === 0) {
     container.appendChild(createText(['Žádné lekce.'], 'text-muted'));
@@ -59,65 +78,11 @@ export function LessonListView({ viewState, handlers }) {
   const karty = createSection('cards');
 
   lekce.forEach((l, idx) => {
-    // Capabilities pro tuto konkrétní lekci jsou předpočítány selektorem
     const caps = lessonCapabilities[idx] ?? {};
-    // Handlery pro tuto konkrétní lekci (sestaveny dle caps)
     const lh = lessonHandlers[idx] ?? {};
     const lessonId = l.lesson_schedule_id ?? l.lesson_id;
 
-    const karta = createDiv('card mb-10 p-15', [
-      createTitle(3, `Lekce #${lessonId}`),
-      createText(
-        [`Stav: ${l.status}${caps.isFull ? ' (PLNÁ)' : ''}`],
-        l.status === 'OPEN' ? 'text-success' : '',
-      ),
-      createText([`Obsazenost: ${l.registered_members ?? 0} / ${l.maximal_capacity ?? '?'}`]),
-    ]);
-
-    // Zveřejnit lekci (DRAFT → OPEN)
-    if (lh.onOpen) {
-      karta.appendChild(
-        addActionButton(
-          () => lh.onOpen(lessonId),
-          'Zveřejnit',
-          'button--primary me-5',
-        ),
-      );
-    }
-
-    // Zrušit lekci (OPEN nebo FULL)
-    if (lh.onCancel) {
-      karta.appendChild(
-        addActionButton(
-          () => lh.onCancel(lessonId),
-          'Zrušit lekci',
-          'button--danger me-5',
-        ),
-      );
-    }
-
-    // Uzavřít lekci (OPEN, FULL nebo IN_PROGRESS)
-    if (lh.onClose) {
-      karta.appendChild(
-        addActionButton(
-          () => lh.onClose(lessonId),
-          'Uzavřít lekci',
-          'button--warning me-5',
-        ),
-      );
-    }
-
-    // Nastavit docházku (COMPLETED)
-    if (lh.onSetAttendance) {
-      karta.appendChild(
-        addActionButton(
-          () => lh.onSetAttendance(lessonId),
-          'Nastavit docházku',
-          'button--secondary',
-        ),
-      );
-    }
-
+    const karta = createLessonCard({ lesson: l, lessonId, caps, lh });
     karty.appendChild(karta);
   });
 

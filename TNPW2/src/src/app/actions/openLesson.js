@@ -11,13 +11,12 @@ export async function openLesson({ store, api, payload }) {
   }));
 
   try {
-    const result = await api.lessons.updateStatus(lessonId, 'OPEN');
+    await api.lessons.updateStatus(lessonId, 'OPEN');
+    const lekce = await api.lessons.getAll();
 
     store.setState((state) => ({
       ...state,
-      lessons: (state.lessons || []).map((l) =>
-        l.lesson_id === result.lesson_id ? result : l
-      ),
+      lessons: lekce,
       ui: {
         ...state.ui,
         status: STATUS.RDY,

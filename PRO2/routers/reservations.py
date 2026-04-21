@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from auth.dependencies import CurrentUser, get_current_member
 from db.dependencies import get_db
+from models.lesson import LessonSchedule
 from models.member import Member
 from models.reservation import Reservation
 from schemas.reservation import (
@@ -63,6 +64,18 @@ def vytvor_rezervaci(
     db.add(nova_rezervace)
     db.commit()
     db.refresh(nova_rezervace)
+
+    # Auto-transition to FULL if capacity reached
+    lesson = db.get(LessonSchedule, nova_rezervace.lesson_schedule_id)
+    if lesson and lesson.status == 'OPEN':
+        active_count = db.query(Reservation).filter(
+            Reservation.lesson_schedule_id == lesson.lesson_schedule_id,
+            Reservation.status.in_(["CREATED", "CONFIRMED"])
+        ).count()
+        if active_count >= lesson.maximum_capacity:
+            lesson.status = 'FULL'
+            db.commit()
+
     return nova_rezervace
 
 
@@ -150,6 +163,18 @@ def zmen_stav_rezervace(
     rezervace.timestamp_change = datetime.now(timezone.utc)
     db.commit()
     db.refresh(rezervace)
+
+    # If CANCELLED and lesson was FULL, check if we can reopen
+    if novy_stav == "CANCELLED":
+        lesson = db.get(LessonSchedule, rezervace.lesson_schedule_id)
+        if lesson and lesson.status == 'FULL':
+            active_count = db.query(Reservation).filter(
+                Reservation.lesson_schedule_id == lesson.lesson_schedule_id,
+                Reservation.status.in_(["CREATED", "CONFIRMED"])
+            ).count()
+            if active_count < lesson.maximum_capacity:
+                lesson.status = 'OPEN'
+                db.commit()
 
     return {
         "reservation_id": rezervace.reservation_id,
