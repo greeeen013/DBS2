@@ -2,6 +2,29 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
+
+class TrainerResponse(BaseModel):
+    employee_id: int
+    name: str
+    surname: str
+
+    class Config:
+        from_attributes = True
+
+
+class LessonTemplateResponse(BaseModel):
+    lesson_template_id: int
+    name: str
+    description: Optional[str] = None
+    duration: int
+    maximum_capacity: int
+    price: float
+    lesson_type_id: int
+
+    class Config:
+        from_attributes = True
+
+
 class LessonBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -14,27 +37,23 @@ class LessonBase(BaseModel):
     is_private: Optional[bool] = None
     employee_id: int
     lesson_template_id: Optional[int] = None
-    lesson_type_id: int
+    lesson_type_id: int = 1
 
 class LessonCreate(LessonBase):
     pass
 
 class LessonResponse(LessonBase):
     lesson_schedule_id: int
+    registered_count: int = 0
 
     class Config:
         orm_mode = True
         from_attributes = True
 
 class LessonDetailResponse(LessonBase):
-    """
-    Rozšířená odpověď pro detail jedné lekce.
-    Oproti LessonResponse obsahuje navíc registered_count –
-    počet aktivních rezervací (CREATED + CONFIRMED), který
-    trenér potřebuje ke sledování obsazenosti lekce.
-    """
     lesson_schedule_id: int
     registered_count: int = 0
+    trainer_name: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -56,6 +75,8 @@ class LessonAttendeeResponse(BaseModel):
     """
     reservation_id: int
     member_id: int
+    member_name: Optional[str] = None
+    member_surname: Optional[str] = None
     status: str
     attendance: Optional[bool] = None
     guest_name: Optional[str] = None
@@ -63,6 +84,15 @@ class LessonAttendeeResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
+
+class LessonTypeResponse(BaseModel):
+    lesson_type_id: int
+    name: str
+    description: Optional[str] = None
+
+    class Config:
         from_attributes = True
 
 class AttendanceUpdate(BaseModel):

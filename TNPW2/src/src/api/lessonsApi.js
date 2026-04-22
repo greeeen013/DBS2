@@ -47,5 +47,56 @@ export function createLessonsApi() {
         body: { member_id: memberId, attended: attended },
       });
     },
+
+    /**
+     * Načte detail jedné lekce včetně počtu přihlášených.
+     * GET /lessons/{id}
+     */
+    getDetail(lessonId) {
+      return apiFetch(`/lessons/${lessonId}`);
+    },
+
+    /**
+     * Načte seznam trenérů (zaměstnanců) se jménem a příjmením.
+     * GET /lessons/trainers/
+     */
+    getTrainers() {
+      return apiFetch('/lessons/trainers/');
+    },
+
+    /**
+     * Načte seznam šablon lekcí.
+     * GET /lessons/templates/
+     */
+    getTemplates() {
+      return apiFetch('/lessons/templates/');
+    },
+
+    /**
+     * Načte seznam typů lekcí.
+     * GET /lessons/types/
+     */
+    getLessonTypes() {
+      return apiFetch('/lessons/types/');
+    },
+
+    /**
+     * Načte seznam účastníků lekce.
+     * GET /lessons/{id}/attendees
+     */
+    getAttendees(lessonId) {
+      return apiFetch(`/lessons/${lessonId}/attendees`);
+    },
+
+    /**
+     * Hromadně uloží docházku pro lekci.
+     * POST /lessons/{id}/team-attendance
+     */
+    saveTeamAttendance(lessonId, members) {
+      return apiFetch(`/lessons/${lessonId}/team-attendance`, {
+        method: 'POST',
+        body: { members },
+      });
+    },
   };
 }

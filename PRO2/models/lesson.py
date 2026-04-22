@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -7,14 +8,27 @@ from .base import Base
 class Employee(Base):
     __tablename__ = "employee"
     employee_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    bank_account_number: Mapped[str] = mapped_column(String(34), nullable=False, default="")
+    position: Mapped[str] = mapped_column(String(200), nullable=False, default="Trenér")
+    role: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    start_date: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    type_of_empoyment: Mapped[str] = mapped_column(String(50), nullable=False, default="HPP")
 
 class LessonType(Base):
     __tablename__ = "lesson_type"
     lesson_type_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, default="")
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 class LessonTemplate(Base):
     __tablename__ = "lesson_template"
     lesson_template_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    duration: Mapped[int] = mapped_column(Integer, nullable=False)
+    maximum_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+    price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    lesson_type_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
 class LessonSchedule(Base):
     """ORM mapování tabulky 'Lesson_schedule'."""

@@ -41,8 +41,10 @@ export function reservationListHandlers(dispatch, viewState) {
     }
 
     if (caps.canCancel) {
-      resHandlers.onCancel = (reservationId) =>
+      resHandlers.onCancel = (reservationId) => {
+        if (!window.confirm('Opravdu chcete zrušit tuto rezervaci?')) return;
         dispatch({ type: CONST.CANCEL_RESERVATION, payload: { reservationId } });
+      };
     }
 
     return resHandlers;

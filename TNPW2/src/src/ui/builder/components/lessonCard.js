@@ -65,9 +65,7 @@ export function createLessonCard({ lesson, lessonId, caps = {}, lh = {} }) {
 
   const nadpis = document.createElement('h3');
   nadpis.className = 'lesson-card__title';
-  nadpis.appendChild(document.createTextNode(
-    lesson.name ? `${lesson.name} (#${lessonId})` : `Lekce #${lessonId}`
-  ));
+  nadpis.appendChild(document.createTextNode(lesson.name ?? 'Lekce'));
   header.appendChild(nadpis);
 
   const stavBadge = document.createElement('span');
@@ -81,10 +79,26 @@ export function createLessonCard({ lesson, lessonId, caps = {}, lh = {} }) {
   // --- Informace o obsazenosti ---
   const obsazenost = document.createElement('p');
   obsazenost.className = 'lesson-card__capacity';
-  const filled = lesson.registered_members ?? 0;
-  const max = lesson.maximal_capacity ?? '?';
+  const filled = lesson.registered_count ?? lesson.registered_members ?? 0;
+  const max = lesson.maximum_capacity ?? lesson.maximal_capacity ?? '?';
   obsazenost.appendChild(document.createTextNode(`Obsazenost: ${filled} / ${max}`));
   karta.appendChild(obsazenost);
+
+  // --- Trenér ---
+  if (lesson.trainer_name) {
+    const trainerEl = document.createElement('p');
+    trainerEl.className = 'lesson-card__trainer text-muted';
+    trainerEl.appendChild(document.createTextNode(`Trenér: ${lesson.trainer_name}`));
+    karta.appendChild(trainerEl);
+  }
+
+  // --- Typ lekce ---
+  if (lesson.lesson_type_name) {
+    const typeEl = document.createElement('p');
+    typeEl.className = 'lesson-card__type text-muted';
+    typeEl.appendChild(document.createTextNode(`Typ: ${lesson.lesson_type_name}`));
+    karta.appendChild(typeEl);
+  }
 
   // --- Čas lekce (pokud je k dispozici) ---
   if (lesson.start_time) {
@@ -102,6 +116,9 @@ export function createLessonCard({ lesson, lessonId, caps = {}, lh = {} }) {
   const akce = document.createElement('div');
   akce.className = 'lesson-card__actions';
 
+  if (lh.onDetail) {
+    akce.appendChild(_makeButton('Detail', 'button--secondary', () => lh.onDetail(lessonId)));
+  }
   if (lh.onOpen) {
     akce.appendChild(_makeButton('Zveřejnit', 'button--primary', () => lh.onOpen(lessonId)));
   }
@@ -113,6 +130,18 @@ export function createLessonCard({ lesson, lessonId, caps = {}, lh = {} }) {
   }
   if (lh.onSetAttendance) {
     akce.appendChild(_makeButton('Nastavit docházku', 'button--secondary', () => lh.onSetAttendance(lessonId)));
+  }
+
+  if (lh.onReopen) {
+    akce.appendChild(_makeButton('Znovu otevřít', 'button--primary', () => lh.onReopen(lessonId)));
+  }
+
+  if (lh.onEnroll) {
+    akce.appendChild(_makeButton('Přihlásit se', 'button--primary', () => lh.onEnroll(lessonId)));
+  }
+
+  if (lh.onUnenroll) {
+    akce.appendChild(_makeButton('Odhlásit se', 'button--danger', () => lh.onUnenroll(lessonId)));
   }
 
   karta.appendChild(akce);
