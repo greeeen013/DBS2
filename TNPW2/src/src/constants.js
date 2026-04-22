@@ -12,6 +12,9 @@ export const ADMIN_VIEW          = 'ADMIN_VIEW';
 export const LESSON_LIST         = 'LESSON_LIST';
 export const LESSON_CREATION_VIEW = 'LESSON_CREATION_VIEW';
 
+// Permanentky
+export const PERMITS_VIEW        = 'PERMITS_VIEW';
+
 // --- Akce dispatcheru ---
 export const ENTER_RESERVATION_LIST = 'ENTER_RESERVATION_LIST';
 export const ENTER_PAYMENT_VIEW     = 'ENTER_PAYMENT_VIEW';
@@ -30,6 +33,12 @@ export const CLEAR_NOTIFICATION     = 'CLEAR_NOTIFICATION';
 // Student B – navigace lekce
 export const ENTER_LESSON_LIST      = 'ENTER_LESSON_LIST';
 export const ENTER_LESSON_CREATION  = 'ENTER_LESSON_CREATION';
+
+// Permanentky – akce
+export const ENTER_PERMITS          = 'ENTER_PERMITS';
+export const PURCHASE_MEMBERSHIP    = 'PURCHASE_MEMBERSHIP';
+export const CREATE_TARIFF          = 'CREATE_TARIFF';
+export const DELETE_TARIFF          = 'DELETE_TARIFF';
 
 // --- Lekce (Scheduled_Lesson a Attendance) – Student B IR02 ---
 export const OPEN_LESSON     = 'OPEN_LESSON';     // Zveřejnění lekce

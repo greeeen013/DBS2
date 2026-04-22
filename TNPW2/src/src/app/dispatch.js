@@ -16,6 +16,10 @@ import { updateLessonCapacity } from './actions/updateLessonCapacity.js';
 import { closeLesson } from './actions/closeLesson.js';
 import { setAttendance } from './actions/setAttendance.js';
 import { openLesson } from './actions/openLesson.js';
+import { enterPermitsView } from './actions/enterPermitsView.js';
+import { purchaseMembership } from './actions/purchaseMembership.js';
+import { createTariff } from './actions/createTariff.js';
+import { deleteTariff } from './actions/deleteTariff.js';
 
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
@@ -159,6 +163,18 @@ export function createDispatcher(store, api) {
 
       case CONST.SET_ATTENDANCE:
         return setAttendance({ store, api, payload });
+
+      case CONST.ENTER_PERMITS:
+        return enterPermitsView({ store, api });
+
+      case CONST.PURCHASE_MEMBERSHIP:
+        return purchaseMembership({ store, api, payload });
+
+      case CONST.CREATE_TARIFF:
+        return createTariff({ store, api, payload });
+
+      case CONST.DELETE_TARIFF:
+        return deleteTariff({ store, api, payload });
 
       case CONST.RECOVER_FROM_ERROR:
         return store.setState((state) => ({

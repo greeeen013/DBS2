@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict NLcKGTwHqhQ1QmabnyTS6caG28BfSgYeEUevXAodsw9tQFtJgnIqHsPK0POxpG9
+\restrict a6VL4KTYcUDPkhJoeIRAFcxCvuOSOlGi4wWswawfYvdO5bnNcXGR5Rw1rgJhx9P
 
--- Dumped from database version 16.13 (Debian 16.13-1.pgdg13+1)
--- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg13+1)
+-- Dumped from database version 16.12 (Debian 16.12-1.pgdg13+1)
+-- Dumped by pg_dump version 16.12 (Debian 16.12-1.pgdg13+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -347,10 +347,10 @@ CREATE TABLE public.member (
     phone_number character varying(50),
     photo text,
     surname character varying(100) NOT NULL,
-    member_id integer DEFAULT nextval(('"member_member_id_seq"'::text)::regclass) NOT NULL,
-    account_id integer,
     password_hash character varying(200),
-    role character varying(50) DEFAULT 'member'::character varying NOT NULL
+    role character varying(50) DEFAULT 'member'::character varying NOT NULL,
+    member_id integer DEFAULT nextval(('"member_member_id_seq"'::text)::regclass) NOT NULL,
+    account_id integer
 );
 
 
@@ -620,9 +620,10 @@ COPY public.lesson_type_tariff (tariff_id, lesson_type_id) FROM stdin;
 -- Data for Name: member; Type: TABLE DATA; Schema: public; Owner: admin_dbs2
 --
 
-COPY public.member (credit_balance, email, entry_token, first_attendance, is_active, name, phone_number, photo, surname, member_id, account_id, password_hash, role) FROM stdin;
-0	asd@dsa.cz	834fded3-3e1d-401e-8ae6-25d8d005b0d2	\N	\N	asd	\N	\N	dsa	2	\N	$2b$12$HZKdNSSlrSeomXPi9HNnZu/IG3JHDrWifzBbfAIenp46oUw5t6/e2	member
-1400	green013@post.cz	dc7a664b-750a-42e2-b37b-9673947c9b69	\N	\N	Jan	\N	\N	Pospíšil	1	\N	$2b$12$CarmULOOHERWRUQqVfBx/.K9eJZmCJsmRmPc0hAavyuh5kPvm47am	admin
+COPY public.member (credit_balance, email, entry_token, first_attendance, is_active, name, phone_number, photo, surname, password_hash, role, member_id, account_id) FROM stdin;
+0	asd@asd.cz	2a21fb16-fdc4-429e-8152-f85572ec2072	\N	\N	asd	\N	\N	dsa	$2b$12$M3k442yRkqHwJcubd.g60eHgtyT/W7X/3dpKuZ3WELMXDiVPV2jqG	member	1	\N
+0	green013@post.cz	3a259629-c7f1-420c-80e9-8f9106139db6	\N	\N	jan	\N	\N	pospisil	$2b$12$50yq9WFyJdmy1YNCInN1MOKeeYcUMMRnlue0JJ6mUb2OKiunJbGpm	admin	2	\N
+0	honzapospa1@seznam.cz	93b08e50-07d1-4868-8fba-3524d1c66f81	\N	\N	jan	\N	\N	pospisil	$2b$12$K3/lTFg0tkfl3aa/JPhXOeCUTJIycOOcbu1ZiEjeDzi3ojQw3LBuK	trainer	3	\N
 \.
 
 
@@ -639,16 +640,7 @@ COPY public.membership (creation_date, is_auto_renewal, valid_from, valid_to, me
 --
 
 COPY public.payment (amount, date, payment_details, payment_type, status, payment_id, discount_code_id, member_id, membership_id) FROM stdin;
-300.00	2026-04-03 18:23:17.094714+00	\N	CARD	PENDING	1	\N	1	\N
-300.00	2026-04-03 18:23:28.112226+00	\N	CARD	PENDING	2	\N	1	\N
-300.00	2026-04-03 18:37:22.810665+00	\N	CARD	COMPLETED	3	\N	1	\N
-200.00	2026-04-03 20:37:08.859517+00	\N	CARD	PENDING	4	\N	2	\N
-200.00	2026-04-03 20:37:44.537019+00	\N	CARD	PENDING	5	\N	2	\N
-100.00	2026-04-03 20:38:00.50952+00	\N	CARD	PENDING	6	\N	2	\N
-50.00	2026-04-03 20:38:34.477024+00	\N	CARD	PENDING	7	\N	2	\N
-100.00	2026-04-03 21:22:27.603148+00	\N	CARD	COMPLETED	8	\N	1	\N
-1000.00	2026-04-03 21:22:33.353645+00	\N	CARD	COMPLETED	9	\N	1	\N
-500.00	2026-04-03 21:22:57.703647+00	\N	CARD	PENDING	10	\N	2	\N
+200.00	2026-04-09 11:49:28.129251+00	\N	CARD	PENDING	1	\N	1	\N
 \.
 
 
@@ -730,7 +722,7 @@ SELECT pg_catalog.setval('public.employee_employee_id_seq', 1, false);
 -- Name: lesson_schedule_lesson_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.lesson_schedule_lesson_schedule_id_seq', 1, false);
+SELECT pg_catalog.setval('public.lesson_schedule_lesson_schedule_id_seq', 1, true);
 
 
 --
@@ -751,7 +743,7 @@ SELECT pg_catalog.setval('public.lesson_type_lesson_type_id_seq', 1, false);
 -- Name: member_member_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.member_member_id_seq', 2, true);
+SELECT pg_catalog.setval('public.member_member_id_seq', 3, true);
 
 
 --
@@ -765,7 +757,7 @@ SELECT pg_catalog.setval('public.membership_membership_id_seq', 1, false);
 -- Name: payment_payment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.payment_payment_id_seq', 10, true);
+SELECT pg_catalog.setval('public.payment_payment_id_seq', 1, true);
 
 
 --
@@ -1105,5 +1097,5 @@ ALTER TABLE ONLY public.trainer_note
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NLcKGTwHqhQ1QmabnyTS6caG28BfSgYeEUevXAodsw9tQFtJgnIqHsPK0POxpG9
+\unrestrict a6VL4KTYcUDPkhJoeIRAFcxCvuOSOlGi4wWswawfYvdO5bnNcXGR5Rw1rgJhx9P
 
