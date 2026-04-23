@@ -45,11 +45,20 @@ export function createInitialState() {
     // Detail konkrétní lekce
     lessonDetail: null,
 
+    // Přihlášení členové na lekci (pro trenéra/admina)
+    lessonEnrollees: [],
+
     // Docházka lekce – { lessonId, lessonName, attendees }
     lessonAttendance: null,
 
     // Filtr seznamu lekcí: 'ALL' | 'OPEN' | 'MINE'
     lessonFilter: 'ALL',
+
+    // Filtr lekcí podle tarifu (null = vše)
+    lessonTariffFilter: null,
+
+    // Přepínač zobrazení: 'list' | 'schedule'
+    lessonViewMode: 'list',
 
     // Permanentky
     tariffs: [],

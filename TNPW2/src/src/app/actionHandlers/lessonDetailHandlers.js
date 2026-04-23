@@ -40,5 +40,10 @@ export function lessonDetailHandlers(dispatch, viewState) {
       dispatch({ type: CONST.ENTER_LESSON_ATTENDANCE, payload: { lessonId: viewState.lesson.lesson_schedule_id } });
   }
 
+  if (viewState.canKickMembers && viewState.lesson) {
+    handlers.onKickMember = (reservationId, memberName) =>
+      dispatch({ type: CONST.KICK_MEMBER, payload: { lessonId: viewState.lesson.lesson_schedule_id, reservationId, memberName } });
+  }
+
   return handlers;
 }

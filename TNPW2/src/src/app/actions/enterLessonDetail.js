@@ -12,10 +12,21 @@ export async function enterLessonDetail({ store, api, payload }) {
   }));
 
   try {
-    const detail = await api.lessons.getDetail(lessonId);
+    const role = store.getState().auth?.role;
+    const isStaff = role === 'trainer' || role === 'admin';
+
+    const [detail, enrollees] = await Promise.all([
+      api.lessons.getDetail(lessonId),
+      isStaff ? api.lessons.getAttendees(lessonId).catch((err) => {
+        console.warn('[enterLessonDetail] getAttendees failed:', err?.message ?? err);
+        return [];
+      }) : Promise.resolve([]),
+    ]);
+
     store.setState((state) => ({
       ...state,
       lessonDetail: detail,
+      lessonEnrollees: enrollees,
       ui: { ...state.ui, mode: CONST.LESSON_DETAIL, status: STATUS.RDY },
     }));
   } catch (error) {

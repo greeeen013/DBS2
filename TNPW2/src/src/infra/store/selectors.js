@@ -139,6 +139,19 @@ function getUserReservationForLesson(state, lessonId) {
 }
 
 /**
+ * Vrátí ID tarifů chybějících pro přihlášení na lekci, nebo null pokud lekce nemá omezení.
+ * Pokud vrátí neprázdné pole, uživatel nemá požadovanou permanentku.
+ */
+export function getMissingMembershipTariffs(lekce, state) {
+  const allowedIds = lekce.allowed_tariff_ids ?? [];
+  if (allowedIds.length === 0) return null; // lekce bez omezení
+  const memberships = state.memberships ?? [];
+  const memberTariffIds = memberships.map((m) => m.tariff_id);
+  const missing = allowedIds.filter((id) => !memberTariffIds.includes(id));
+  return missing.length < allowedIds.length ? null : missing; // má alespoň jednu → null (OK)
+}
+
+/**
  * canEnrollInLesson – člen nebo trenér (na cizí lekci) se může přihlásit na OPEN lekci,
  * pokud ještě nemá aktivní rezervaci. Admin se nepřihlašuje. Trenér se nemůže přihlásit
  * na svou vlastní lekci.
@@ -149,7 +162,10 @@ export function canEnrollInLesson(lekce, state) {
   if (lekce.status !== 'OPEN') return false;
   if (isLessonFull(lekce)) return false;
   const lessonId = lekce.lesson_schedule_id ?? lekce.lesson_id;
-  return getUserReservationForLesson(state, lessonId) === null;
+  if (getUserReservationForLesson(state, lessonId) !== null) return false;
+  // Kontrola permanentky – pokud lekce vyžaduje a uživatel nemá → nelze se přihlásit
+  const missing = getMissingMembershipTariffs(lekce, state);
+  return missing === null; // null = buď bez omezení nebo má platnou permanentku
 }
 
 /**
@@ -218,7 +234,7 @@ export function selectReservationListView(state) {
     },
     reservationCapabilities: rezervace.map((r) => ({
       reservationId: r.reservation_id,
-      canConfirm: canConfirmReservation(r),
+      lessonId: r.lesson_schedule_id,
       canCancel: canCancelReservation(r),
     })),
   };
@@ -241,6 +257,7 @@ export function selectPaymentView(state) {
 
 export function selectLessonListView(state) {
   let lekce = selectLessons(state);
+  const allTariffs = state.tariffs ?? [];
 
   // Enrich lessons with trainer_name and lesson_type_name
   lekce = lekce.map((l) => {
@@ -269,19 +286,55 @@ export function selectLessonListView(state) {
     lekce = lekce.filter((l) => l.employee_id === state.auth.memberId);
   }
 
+  // Apply tariff filter – jen tarify vyskytující se v aspoň jedné lekci
+  const tariffFilter = state.lessonTariffFilter ?? null;
+  if (tariffFilter !== null) {
+    lekce = lekce.filter((l) => (l.allowed_tariff_ids ?? []).includes(tariffFilter));
+  }
+
+  // Sbíráme unikátní tarify z lekcí (pro zobrazení filter buttons)
+  const usedTariffIds = [...new Set(lekce.flatMap((l) => l.allowed_tariff_ids ?? []))];
+  // Zahrneme i tarify ze všech lekcí (bez aktuálního filtru)
+  const allLessons = selectLessons(state);
+  const allUsedTariffIds = [...new Set(allLessons.flatMap((l) => l.allowed_tariff_ids ?? []))];
+  const availableTariffFilters = allTariffs.filter((t) => allUsedTariffIds.includes(t.tariff_id));
+
   return {
     type: CONST.LESSON_LIST,
     lekce,
     lessonFilter: filter,
+    lessonTariffFilter: tariffFilter,
+    lessonViewMode: state.lessonViewMode ?? 'list',
+    availableTariffFilters,
     capabilities: {
-      // IR05: Globální capabilities závisí na roli, ne na konkrétní lekci
       canCreateLesson: canCreateLesson(state),
       canGoToReservations: true,
     },
-    // IR05: Per-lekce capabilities – UI je čte, nerozhoduje samo
     lessonCapabilities: lekce.map((l) => {
       const lessonId = l.lesson_schedule_id ?? l.lesson_id;
       const userRes = getUserReservationForLesson(state, lessonId);
+
+      // Zkontrolujeme, zda by uživatel mohl přihlásit kdybychom ignorovali permanentky
+      const role = state.auth?.role;
+      const wouldQualifyWithoutMembership =
+        role !== 'admin' &&
+        !(role === 'trainer' && l.employee_id === state.auth?.memberId) &&
+        l.status === 'OPEN' &&
+        !isLessonFull(l) &&
+        getUserReservationForLesson(state, lessonId) === null;
+
+      // membershipRequired = pole názvů chybějících permanentek, nebo null
+      let membershipRequired = null;
+      if (wouldQualifyWithoutMembership) {
+        const missingIds = getMissingMembershipTariffs(l, state);
+        if (missingIds?.length) {
+          membershipRequired = missingIds.map((id) => {
+            const t = allTariffs.find((t) => t.tariff_id === id);
+            return t?.name ?? `Tarif #${id}`;
+          });
+        }
+      }
+
       return {
         lessonId,
         canOpen: canOpenLesson(l, state),
@@ -293,6 +346,7 @@ export function selectLessonListView(state) {
         canEnroll: canEnrollInLesson(l, state),
         canUnenroll: canUnenrollFromLesson(l, state),
         userReservationId: userRes ? userRes.reservation_id : null,
+        membershipRequired,
       };
     }),
   };
@@ -387,10 +441,18 @@ export function selectViewState(state) {
           canSetAttendance: canSetAttendance(detail, state),
         };
       }
+      const role = state.auth?.role;
+      const canSeeEnrollees = role === 'admin' || role === 'trainer';
+      const canKickMembers = role === 'admin' ||
+        (role === 'trainer' && detail?.employee_id === state.auth?.memberId);
+
       return {
         type: CONST.LESSON_DETAIL,
         lesson: detail,
         auth: { role: state.auth.role, memberId: state.auth.memberId },
+        enrollees: canSeeEnrollees ? (state.lessonEnrollees ?? []) : [],
+        canSeeEnrollees,
+        canKickMembers,
         ...caps,
       };
     }
@@ -399,6 +461,8 @@ export function selectViewState(state) {
         type: CONST.LESSON_CREATION_VIEW,
         trainers: state.trainers ?? [],
         lessonTemplates: state.lessonTemplates ?? [],
+        tariffs: state.tariffs ?? [],
+        archivedTariffs: state.archivedTariffs ?? [],
         auth: {
           role: state.auth.role,
           memberId: state.auth.memberId,

@@ -31,9 +31,14 @@ export function lessonListHandlers(dispatch, viewState) {
       dispatch({ type: CONST.ENTER_LESSON_CREATION });
   }
 
-  // Filtrování lekcí
   handlers.onSetFilter = (filter) =>
     dispatch({ type: CONST.SET_LESSON_FILTER, payload: { filter } });
+
+  handlers.onSetTariffFilter = (tariffId) =>
+    dispatch({ type: CONST.SET_LESSON_TARIFF_FILTER, payload: { tariffId } });
+
+  handlers.onSetViewMode = (mode) =>
+    dispatch({ type: CONST.SET_LESSON_VIEW_MODE, payload: { mode } });
 
   // Per-lekce handlery – sestaveny dle lessonCapabilities pole z IR05 selektoru
   handlers.lessonHandlers = lessonCapabilities.map((caps, idx) => {
@@ -74,6 +79,13 @@ export function lessonListHandlers(dispatch, viewState) {
     if (caps.canEnroll) {
       lessonHandlers.onEnroll = (lessonId) =>
         dispatch({ type: CONST.ENROLL_LESSON, payload: { lessonId } });
+    }
+
+    if (caps.membershipRequired?.length) {
+      lessonHandlers.onEnrollRestricted = (tariffNames) => {
+        const names = tariffNames.join(', ');
+        alert(`Tato lekce je dostupná pouze pro členy s permanentkou: ${names}`);
+      };
     }
 
     if (caps.canUnenroll) {
