@@ -85,17 +85,13 @@ export function ReservationListView({ viewState, handlers }) {
 
       // Akční tlačítka
       const akce = createDiv('lesson-card__actions mt-10');
-      if (rh.onConfirm) {
-        akce.appendChild(addActionButton(
-          () => rh.onConfirm(r.reservation_id),
-          'Potvrdit (−100 Kč)',
-          'button--primary me-5',
-        ));
+      if (rh.onDetail) {
+        akce.appendChild(addActionButton(rh.onDetail, 'Detail lekce', 'button--secondary me-5'));
       }
       if (rh.onCancel) {
         akce.appendChild(addActionButton(
           () => rh.onCancel(r.reservation_id),
-          'Zrušit rezervaci',
+          'Zrušit',
           'button--danger',
         ));
       }

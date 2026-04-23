@@ -157,8 +157,8 @@ export function render(root, state, dispatch) {
     } else {
       messages.appendChild(createSuccessNotification({ message: notification.message }));
     }
-    // Vymazání notifikace přes dispatch na dalším tiku – zabrání rekurzivnímu renderu.
-    setTimeout(() => dispatch({ type: CONST.CLEAR_NOTIFICATION }), 0);
+    // Vymazání notifikace po 4 sekundách – dost dlouho aby si ji uživatel přečetl.
+    setTimeout(() => dispatch({ type: CONST.CLEAR_NOTIFICATION }), 4000);
   }
 
   root.appendChild(messages);

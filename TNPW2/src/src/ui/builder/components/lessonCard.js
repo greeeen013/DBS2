@@ -138,6 +138,14 @@ export function createLessonCard({ lesson, lessonId, caps = {}, lh = {} }) {
 
   if (lh.onEnroll) {
     akce.appendChild(_makeButton('Přihlásit se', 'button--primary', () => lh.onEnroll(lessonId)));
+  } else if (lh.onEnrollRestricted && caps.membershipRequired?.length) {
+    // Uživatel nemá požadovanou permanentku – vizuálně disabled, ale klikatelné (popup info)
+    const disabledBtn = document.createElement('button');
+    disabledBtn.className = 'button btn-disabled-membership me-5';
+    disabledBtn.title = `Vyžaduje permanentku: ${caps.membershipRequired.join(', ')}`;
+    disabledBtn.appendChild(document.createTextNode('🔒 Přihlásit se'));
+    disabledBtn.addEventListener('click', () => lh.onEnrollRestricted(caps.membershipRequired));
+    akce.appendChild(disabledBtn);
   }
 
   if (lh.onUnenroll) {
