@@ -72,6 +72,12 @@ class Member(Base):
         comment="Aktuální zůstatek kreditů (1 kredit = 1 CZK).",
     )
 
+    photo: Mapped[Optional[str]] = mapped_column(
+        String,
+        nullable=True,
+        comment="URL profilové fotky (/static/photos/...).",
+    )
+
     def __repr__(self) -> str:
         return (
             f"<Member(id={self.member_id}, "

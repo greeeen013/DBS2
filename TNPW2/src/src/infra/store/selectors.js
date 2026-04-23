@@ -304,6 +304,9 @@ export function selectProfileView(state) {
     type: CONST.PROFILE_VIEW,
     historyReservations: enrichWithLesson(state.history?.reservations ?? [], lekce),
     historyPayments: state.history?.payments ?? [],
+    photoUrl: state.memberProfile?.photo_url ?? null,
+    memberName: state.memberProfile?.name ?? state.auth?.name ?? null,
+    memberSurname: state.memberProfile?.surname ?? state.auth?.surname ?? null,
     capabilities: {
       canGoToReservations: true,
       canGoToPayments: true,
@@ -321,6 +324,8 @@ export function selectAdminView(state) {
   return {
     type: CONST.ADMIN_VIEW,
     pendingPayments: state.pendingPayments ?? [],
+    membersNoMembership: state.membersNoMembership ?? [],
+    trainerStats: state.trainerStats ?? [],
   };
 }
 

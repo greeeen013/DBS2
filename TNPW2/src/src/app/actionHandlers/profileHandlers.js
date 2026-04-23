@@ -19,5 +19,11 @@ export function profileHandlers(dispatch, viewState) {
   handlers.onGoToReservations = () =>
     dispatch({ type: CONST.ENTER_RESERVATION_LIST });
 
+  handlers.onUploadPhoto = (file) =>
+    dispatch({ type: CONST.UPLOAD_PHOTO, payload: { file } });
+
+  handlers.onGoToPayments = () =>
+    dispatch({ type: CONST.ENTER_PAYMENT_VIEW });
+
   return handlers;
 }

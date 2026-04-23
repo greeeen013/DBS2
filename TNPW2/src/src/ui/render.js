@@ -49,7 +49,7 @@ function createUserHeader(auth, headerHandlers) {
   }
 
   const btnPermits = addActionButton(
-    () => dispatch({ type: CONST.ENTER_PERMITS }),
+    headerHandlers.onGoToPermits,
     'Permanentky',
     'button--secondary btn-sm mt-1',
   );
