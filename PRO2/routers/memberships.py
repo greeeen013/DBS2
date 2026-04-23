@@ -23,7 +23,34 @@ router = APIRouter(tags=["Permanentky"])
 
 @router.get("/tariffs", response_model=list[TariffResponse])
 def get_tariffs(db: Session = Depends(get_db)):
-    return db.query(Tariff).all()
+    return db.query(Tariff).filter(Tariff.is_active == True).all()
+
+
+@router.get("/tariffs/archived", response_model=list[TariffResponse])
+def get_archived_tariffs(
+    current: CurrentUser = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    if current.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pouze administrátor.")
+    return db.query(Tariff).filter(Tariff.is_active == False).all()
+
+
+@router.patch("/tariffs/{tariff_id}/restore", response_model=TariffResponse)
+def restore_tariff(
+    tariff_id: int,
+    current: CurrentUser = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    if current.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pouze administrátor.")
+    tariff = db.query(Tariff).filter(Tariff.tariff_id == tariff_id).first()
+    if not tariff or tariff.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivovaný tarif neexistuje.")
+    tariff.is_active = True
+    db.commit()
+    db.refresh(tariff)
+    return tariff
 
 
 @router.post("/tariffs", response_model=TariffResponse, status_code=status.HTTP_201_CREATED)
@@ -56,17 +83,9 @@ def delete_tariff(
             detail="Pouze administrátor může mazat tarify.",
         )
     tariff = db.query(Tariff).filter(Tariff.tariff_id == tariff_id).first()
-    if not tariff:
+    if not tariff or not tariff.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tarif neexistuje.")
-    active_memberships = (
-        db.query(Membership).filter(Membership.tariff_id == tariff_id).count()
-    )
-    if active_memberships > 0:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Tarif nelze smazat – existují k němu permanentky.",
-        )
-    db.delete(tariff)
+    tariff.is_active = False
     db.commit()
 
 

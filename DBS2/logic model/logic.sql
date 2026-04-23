@@ -54,7 +54,23 @@ GROUP BY m.member_id, m.name, m.surname, m.email, m.credit_balance
 HAVING MAX(ms.valid_to) < NOW() OR MAX(ms.valid_to) IS NULL;
 
 
--- 3. Statistiky trenérů – počet odučených lekcí a celkových rezervací
+-- 3. Archivované tarify – tarify deaktivované adminem (nelze zakoupit, ale historické permanentky zůstávají)
+CREATE OR REPLACE VIEW v_archived_tariffs AS
+SELECT
+    tariff_id,
+    name,
+    description,
+    price,
+    duration_months,
+    duration_days,
+    COUNT(ms.membership_id) AS total_memberships_sold
+FROM tariff
+LEFT JOIN membership ms USING (tariff_id)
+WHERE is_active = FALSE
+GROUP BY tariff_id, name, description, price, duration_months, duration_days;
+
+
+-- 4. Statistiky trenérů – počet odučených lekcí a celkových rezervací
 CREATE OR REPLACE VIEW v_trainer_stats AS
 SELECT
     e.employee_id,

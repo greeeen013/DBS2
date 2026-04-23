@@ -14,6 +14,12 @@ export function createMembershipsApi() {
     purchaseMembership: (tariff_id) =>
       apiFetch('/memberships', { method: 'POST', body: JSON.stringify({ tariff_id }) }),
 
+    fetchArchivedTariffs: () =>
+      apiFetch('/tariffs/archived', { method: 'GET' }),
+
+    restoreTariff: (tariff_id) =>
+      apiFetch(`/tariffs/${tariff_id}/restore`, { method: 'PATCH' }),
+
     deleteTariff: (tariff_id) =>
       apiFetch(`/tariffs/${tariff_id}`, { method: 'DELETE' }),
   };

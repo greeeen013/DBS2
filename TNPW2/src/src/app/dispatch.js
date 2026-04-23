@@ -25,6 +25,7 @@ import { enterPermitsView } from './actions/enterPermitsView.js';
 import { purchaseMembership } from './actions/purchaseMembership.js';
 import { createTariff } from './actions/createTariff.js';
 import { deleteTariff } from './actions/deleteTariff.js';
+import { restoreTariff } from './actions/restoreTariff.js';
 import { enrollLesson } from './actions/enrollLesson.js';
 import { unenrollLesson } from './actions/unenrollLesson.js';
 import { reopenLesson } from './actions/reopenLesson.js';
@@ -135,6 +136,9 @@ export function createDispatcher(store, api) {
 
       case CONST.DELETE_TARIFF:
         return deleteTariff({ store, api, payload });
+
+      case CONST.RESTORE_TARIFF:
+        return restoreTariff({ store, api, payload });
 
       case CONST.ENROLL_LESSON:
         return enrollLesson({ store, api, payload });

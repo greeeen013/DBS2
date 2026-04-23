@@ -53,6 +53,7 @@ export function createInitialState() {
 
     // Permanentky
     tariffs: [],
+    archivedTariffs: [],
     memberships: [],
 
     // Přihlášený člen

@@ -12,15 +12,19 @@ export async function enterPermitsView({ store, api }) {
   }));
 
   try {
-    const [tariffs, memberships] = await Promise.all([
+    const isAdmin = store.getState().auth?.role === 'admin';
+    const requests = [
       api.memberships.fetchTariffs(),
       api.memberships.fetchMyMemberships(),
-    ]);
+      isAdmin ? api.memberships.fetchArchivedTariffs() : Promise.resolve([]),
+    ];
+    const [tariffs, memberships, archivedTariffs] = await Promise.all(requests);
 
     store.setState((state) => ({
       ...state,
       tariffs,
       memberships,
+      archivedTariffs,
       ui: { ...state.ui, status: STATUS.RDY },
     }));
   } catch (error) {

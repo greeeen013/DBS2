@@ -1,10 +1,10 @@
 import * as STATUS from '../../statuses.js';
 
 export async function createTariff({ store, api, payload }) {
-  const { name, description, price } = payload;
+  const { name, description, price, duration_months, duration_days } = payload;
 
   try {
-    await api.memberships.createTariff({ name, description, price });
+    await api.memberships.createTariff({ name, description, price, duration_months, duration_days });
 
     const tariffs = await api.memberships.fetchTariffs();
 

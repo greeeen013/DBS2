@@ -17,7 +17,7 @@ TNPW2_SRC = os.path.join(TNPW2, "src")
 DBS2 = os.path.join(ROOT, "DBS2")
 
 BACKEND_CMD = ["python", "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
-FRONTEND_CMD = ["python", "-m", "http.server", "8001"]
+FRONTEND_CMD = ["python", "serve.py"]
 
 # pid → popis (pro výpis v menu)
 _procs: dict[int, str] = {}
@@ -102,7 +102,7 @@ def run_backend_window() -> None:
 
 
 def run_frontend_window() -> None:
-    proc = _open_window("Pretorian - Frontend :8001", TNPW2_SRC, FRONTEND_CMD)
+    proc = _open_window("Pretorian - Frontend :8001", TNPW2, FRONTEND_CMD)
     print(f"  Otevřeno okno '{_procs[proc.pid]}'  (PID {proc.pid})")
     print("  http://localhost:8001")
 

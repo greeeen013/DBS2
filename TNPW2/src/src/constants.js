@@ -41,6 +41,7 @@ export const ENTER_PERMITS          = 'ENTER_PERMITS';
 export const PURCHASE_MEMBERSHIP    = 'PURCHASE_MEMBERSHIP';
 export const CREATE_TARIFF          = 'CREATE_TARIFF';
 export const DELETE_TARIFF          = 'DELETE_TARIFF';
+export const RESTORE_TARIFF         = 'RESTORE_TARIFF';
 
 // --- Lekce (Scheduled_Lesson a Attendance) – Student B IR02 ---
 export const OPEN_LESSON     = 'OPEN_LESSON';     // Zveřejnění lekce
