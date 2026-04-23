@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -20,9 +20,19 @@ class LessonTemplateResponse(BaseModel):
     maximum_capacity: int
     price: float
     lesson_type_id: int
+    allowed_tariff_ids: List[int] = []
 
     class Config:
         from_attributes = True
+
+class LessonTemplateCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    duration: int
+    maximum_capacity: int
+    price: float
+    lesson_type_id: int = 1
+    allowed_tariff_ids: List[int] = []
 
 
 class LessonBase(BaseModel):
@@ -40,11 +50,12 @@ class LessonBase(BaseModel):
     lesson_type_id: int = 1
 
 class LessonCreate(LessonBase):
-    pass
+    allowed_tariff_ids: List[int] = []
 
 class LessonResponse(LessonBase):
     lesson_schedule_id: int
     registered_count: int = 0
+    allowed_tariff_ids: List[int] = []
 
     class Config:
         orm_mode = True
@@ -54,6 +65,7 @@ class LessonDetailResponse(LessonBase):
     lesson_schedule_id: int
     registered_count: int = 0
     trainer_name: Optional[str] = None
+    allowed_tariff_ids: List[int] = []
 
     class Config:
         orm_mode = True
