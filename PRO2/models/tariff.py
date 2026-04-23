@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import Integer, Numeric, SmallInteger, String, Text
+from sqlalchemy import Boolean, Integer, Numeric, SmallInteger, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -15,6 +15,7 @@ class Tariff(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     duration_months: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
     duration_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     def __repr__(self) -> str:
         return f"<Tariff(id={self.tariff_id}, name='{self.name}', price={self.price})>"

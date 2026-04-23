@@ -12,5 +12,8 @@ export function permitsHandlers(dispatch, viewState) {
 
     onDeleteTariff: (tariffId) =>
       dispatch({ type: CONST.DELETE_TARIFF, payload: { tariffId } }),
+
+    onRestoreTariff: (tariffId) =>
+      dispatch({ type: CONST.RESTORE_TARIFF, payload: { tariffId } }),
   };
 }

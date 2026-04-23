@@ -183,8 +183,29 @@ function renderCreateTariffForm(handlers) {
   return section;
 }
 
+function renderArchivedTariffRow(tariff, handlers) {
+  const tr = createElement('tr', {});
+  tr.appendChild(createElement('td', {}, [tariff.name]));
+  tr.appendChild(createElement('td', {}, [tariff.description || '—']));
+  tr.appendChild(createElement('td', {}, [`${tariff.price} kreditů`]));
+  tr.appendChild(createElement('td', {}, [formatDuration(tariff.duration_months, tariff.duration_days)]));
+
+  const td = createElement('td', {});
+  td.appendChild(addActionButton(
+    () => {
+      const ok = window.confirm(`Obnovit tarif "${tariff.name}"?`);
+      if (ok) handlers.onRestoreTariff(tariff.tariff_id);
+    },
+    'Obnovit',
+    'button--primary',
+  ));
+  tr.appendChild(td);
+
+  return tr;
+}
+
 export function PermitsView({ viewState, handlers }) {
-  const { tariffs, memberships, creditBalance, isAdmin } = viewState;
+  const { tariffs, archivedTariffs, memberships, creditBalance, isAdmin } = viewState;
 
   const container = createSection('container mt-15');
 
@@ -211,8 +232,28 @@ export function PermitsView({ viewState, handlers }) {
     container.appendChild(cards);
   }
 
-  // ---- Admin: přidání tarifu ----
+  // ---- Admin: archivované tarify + přidání tarifu ----
   if (isAdmin) {
+    container.appendChild(createTitle(2, 'Archivované tarify'));
+
+    if (!archivedTariffs || archivedTariffs.length === 0) {
+      container.appendChild(createText(['Žádné archivované tarify.'], 'text-muted'));
+    } else {
+      const table = createElement('table', { className: 'table table-bordered mt-10' });
+      const thead = createElement('thead', { className: 'table-dark' });
+      const headerTr = createElement('tr', {});
+      ['Název', 'Popis', 'Cena', 'Platnost', ''].forEach((h) =>
+        headerTr.appendChild(createElement('th', {}, [h])),
+      );
+      thead.appendChild(headerTr);
+      table.appendChild(thead);
+
+      const tbody = createElement('tbody', {});
+      archivedTariffs.forEach((t) => tbody.appendChild(renderArchivedTariffRow(t, handlers)));
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+
     container.appendChild(renderCreateTariffForm(handlers));
   }
 

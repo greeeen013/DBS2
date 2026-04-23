@@ -333,6 +333,7 @@ export function selectPermitsView(state) {
   return {
     type: CONST.PERMITS_VIEW,
     tariffs: state.tariffs ?? [],
+    archivedTariffs: state.archivedTariffs ?? [],
     memberships: state.memberships ?? [],
     creditBalance: state.creditBalance ?? 0,
     isAdmin: state.auth?.role === 'admin',
