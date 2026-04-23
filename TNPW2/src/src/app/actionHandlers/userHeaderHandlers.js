@@ -25,5 +25,8 @@ export function userHeaderHandlers(dispatch, auth) {
   handlers.onGoToAdmin = () =>
     dispatch({ type: CONST.ENTER_ADMIN_VIEW });
 
+  handlers.onGoToPermits = () =>
+    dispatch({ type: CONST.ENTER_PERMITS });
+
   return handlers;
 }

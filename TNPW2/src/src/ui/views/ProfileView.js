@@ -31,8 +31,8 @@ function formatDate(iso) {
 }
 
 export function ProfileView({ viewState, handlers }) {
-  const { historyReservations, historyPayments } = viewState;
-  const { onGoToReservations } = handlers;
+  const { historyReservations, historyPayments, photoUrl, memberName, memberSurname } = viewState;
+  const { onGoToReservations, onUploadPhoto, onGoToPayments } = handlers;
 
   const container = createSection('container mt-15');
   container.appendChild(createTitle(1, 'Můj profil'));
@@ -40,6 +40,42 @@ export function ProfileView({ viewState, handlers }) {
   if (onGoToReservations) {
     container.appendChild(addActionButton(onGoToReservations, '← Zpět na rezervace', 'button--success mb-15'));
   }
+
+  // --- Sekce: Profilová fotka ---
+  const photoSection = createDiv('card p-15 mb-20 d-flex align-center');
+
+  const img = createElement('img', {
+    src: photoUrl ? `http://localhost:8000${photoUrl}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"%3E%3Crect width="80" height="80" rx="40" fill="%23444"%2F%3E%3Ctext x="40" y="48" text-anchor="middle" font-size="32" fill="%23aaa"%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E',
+    alt: 'Profilová fotka',
+    style: 'width:80px;height:80px;border-radius:50%;object-fit:cover;margin-right:20px;',
+  });
+  photoSection.appendChild(img);
+
+  const photoInfo = createDiv('');
+  if (memberName || memberSurname) {
+    photoInfo.appendChild(createElement('p', { className: 'fw-semibold mb-5' }, [`${memberName ?? ''} ${memberSurname ?? ''}`.trim()]));
+  }
+
+  const fileInput = createElement('input', {
+    type: 'file',
+    accept: 'image/jpeg,image/png,image/webp',
+    style: 'display:none',
+    id: 'photo-upload-input',
+  });
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadPhoto) onUploadPhoto(file);
+  });
+  photoInfo.appendChild(fileInput);
+
+  const uploadBtn = addActionButton(
+    () => fileInput.click(),
+    photoUrl ? 'Změnit fotku' : 'Nahrát fotku',
+    'button--secondary btn-sm',
+  );
+  photoInfo.appendChild(uploadBtn);
+  photoSection.appendChild(photoInfo);
+  container.appendChild(photoSection);
 
   // --- Sekce: Moje rezervace ---
   container.appendChild(createTitle(2, 'Moje přihlášky na lekce'));
@@ -82,8 +118,9 @@ export function ProfileView({ viewState, handlers }) {
     container.appendChild(createText(['Zatím žádné platby.'], 'text-muted'));
   } else {
     const seznam = createSection('payments-history-list');
+    const recentPayments = historyPayments.slice(0, 3);
 
-    historyPayments.forEach((p) => {
+    recentPayments.forEach((p) => {
       const datum = formatDate(p.date ?? p.timestamp_creation);
       const karta = createDiv('card mb-5 p-10');
 
@@ -97,6 +134,10 @@ export function ProfileView({ viewState, handlers }) {
     });
 
     container.appendChild(seznam);
+
+    if (historyPayments.length > 3 && onGoToPayments) {
+      container.appendChild(addActionButton(onGoToPayments, 'Zobrazit více plateb →', 'button--secondary mt-5'));
+    }
   }
 
   return container;

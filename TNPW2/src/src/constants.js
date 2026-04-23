@@ -58,3 +58,6 @@ export const LESSON_ATTENDANCE       = 'LESSON_ATTENDANCE';
 export const ENTER_LESSON_ATTENDANCE = 'ENTER_LESSON_ATTENDANCE';
 export const SAVE_TEAM_ATTENDANCE    = 'SAVE_TEAM_ATTENDANCE';
 export const SET_LESSON_FILTER       = 'SET_LESSON_FILTER';
+
+// Profil – upload fotky
+export const UPLOAD_PHOTO            = 'UPLOAD_PHOTO';

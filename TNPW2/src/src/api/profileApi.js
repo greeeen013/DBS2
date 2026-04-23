@@ -7,13 +7,26 @@ import { apiFetch } from './httpClient.js';
 
 export function createProfileApi() {
   return {
-    /**
-     * Načte kombinovanou historii přihlášeného člena.
-     * GET /me/history
-     * Odpověď: { reservations: [...], payments: [...] }
-     */
     getHistory() {
       return apiFetch('/me/history');
+    },
+
+    getProfile() {
+      return apiFetch('/me');
+    },
+
+    uploadPhoto(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token');
+      return fetch('http://localhost:8000/me/photo', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      }).then((res) => {
+        if (!res.ok) return res.json().then((e) => Promise.reject(new Error(e.detail ?? 'Chyba nahrávání')));
+        return res.json();
+      });
     },
   };
 }

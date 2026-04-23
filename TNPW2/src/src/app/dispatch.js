@@ -29,6 +29,7 @@ import { enrollLesson } from './actions/enrollLesson.js';
 import { unenrollLesson } from './actions/unenrollLesson.js';
 import { reopenLesson } from './actions/reopenLesson.js';
 import { saveTeamAttendance } from './actions/saveTeamAttendance.js';
+import { uploadPhoto } from './actions/uploadPhoto.js';
 
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
@@ -171,6 +172,9 @@ export function createDispatcher(store, api) {
 
       case CONST.SAVE_TEAM_ATTENDANCE:
         return saveTeamAttendance({ store, api, payload });
+
+      case CONST.UPLOAD_PHOTO:
+        return uploadPhoto({ store, api, payload });
 
       case CONST.SET_LESSON_FILTER:
         return store.setState((s) => ({ ...s, lessonFilter: payload.filter }));

@@ -14,6 +14,7 @@ import { createAuthApi } from '../api/authApi.js';
 import { createAdminApi } from '../api/adminApi.js';
 import { createLessonsApi } from '../api/lessonsApi.js';
 import { createMembershipsApi } from '../api/membershipsApi.js';
+import { createStatsApi } from '../api/statsApi.js';
 import { initRouter, pathnameToAction } from './router.js';
 import * as CONST from '../constants.js';
 
@@ -26,6 +27,7 @@ const api = {
   admin: createAdminApi(),
   lessons: createLessonsApi(),
   memberships: createMembershipsApi(),
+  stats: createStatsApi(),
 };
 
 const store = createStore(createInitialState());

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict a6VL4KTYcUDPkhJoeIRAFcxCvuOSOlGi4wWswawfYvdO5bnNcXGR5Rw1rgJhx9P
+\restrict Ph688PTaFH7qATYlmfbkW0KdlgmOBxs71ovi1kra4qcWFbpdCq8EhI5pXfMK9EO
 
 -- Dumped from database version 16.12 (Debian 16.12-1.pgdg13+1)
 -- Dumped by pg_dump version 16.12 (Debian 16.12-1.pgdg13+1)
@@ -33,6 +33,193 @@ CREATE TYPE public.reservationstatus AS ENUM (
 
 
 ALTER TYPE public.reservationstatus OWNER TO admin_dbs2;
+
+--
+-- Name: fn_auto_deduct_credit(); Type: FUNCTION; Schema: public; Owner: admin_dbs2
+--
+
+CREATE FUNCTION public.fn_auto_deduct_credit() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_price NUMERIC;
+BEGIN
+    IF NEW.status = 'CONFIRMED' AND (OLD.status IS NULL OR OLD.status != 'CONFIRMED') THEN
+        SELECT COALESCE(price, 0) INTO v_price
+        FROM lesson_schedule WHERE lesson_schedule_id = NEW.lesson_schedule_id;
+
+        IF v_price > 0 THEN
+            UPDATE member
+            SET credit_balance = credit_balance - v_price
+            WHERE member_id = NEW.member_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_auto_deduct_credit() OWNER TO admin_dbs2;
+
+--
+-- Name: fn_check_lesson_capacity(integer); Type: FUNCTION; Schema: public; Owner: admin_dbs2
+--
+
+CREATE FUNCTION public.fn_check_lesson_capacity(p_lesson_id integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_max     INT;
+    v_current INT;
+BEGIN
+    SELECT maximum_capacity INTO v_max
+    FROM lesson_schedule WHERE lesson_schedule_id = p_lesson_id;
+
+    IF v_max IS NULL THEN RETURN FALSE; END IF;
+
+    SELECT COUNT(*) INTO v_current
+    FROM reservation
+    WHERE lesson_schedule_id = p_lesson_id AND status != 'CANCELLED';
+
+    RETURN v_current < v_max;
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_check_lesson_capacity(p_lesson_id integer) OWNER TO admin_dbs2;
+
+--
+-- Name: fn_get_member_details_json(integer); Type: FUNCTION; Schema: public; Owner: admin_dbs2
+--
+
+CREATE FUNCTION public.fn_get_member_details_json(p_member_id integer) RETURNS json
+    LANGUAGE sql
+    AS $$
+    SELECT row_to_json(t)
+    FROM (
+        SELECT member_id, name, surname, email, credit_balance, role, phone_number
+        FROM member
+        WHERE member_id = p_member_id
+    ) t;
+$$;
+
+
+ALTER FUNCTION public.fn_get_member_details_json(p_member_id integer) OWNER TO admin_dbs2;
+
+--
+-- Name: fn_get_tariff_price(integer, numeric); Type: FUNCTION; Schema: public; Owner: admin_dbs2
+--
+
+CREATE FUNCTION public.fn_get_tariff_price(p_tariff_id integer, p_discount_percent numeric DEFAULT 0) RETURNS numeric
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_price NUMERIC;
+BEGIN
+    SELECT price INTO v_price FROM tariff WHERE tariff_id = p_tariff_id;
+    IF v_price IS NULL THEN
+        RAISE EXCEPTION 'Tarif % nenalezen', p_tariff_id;
+    END IF;
+    RETURN ROUND(v_price * (1 - p_discount_percent / 100), 2);
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_get_tariff_price(p_tariff_id integer, p_discount_percent numeric) OWNER TO admin_dbs2;
+
+--
+-- Name: fn_validate_reservation(); Type: FUNCTION; Schema: public; Owner: admin_dbs2
+--
+
+CREATE FUNCTION public.fn_validate_reservation() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_curr_occupied INT;
+    v_max_cap       INT;
+BEGIN
+    SELECT maximum_capacity INTO v_max_cap
+    FROM lesson_schedule
+    WHERE lesson_schedule_id = NEW.lesson_schedule_id
+    FOR SHARE;
+
+    SELECT COUNT(*) INTO v_curr_occupied
+    FROM reservation
+    WHERE lesson_schedule_id = NEW.lesson_schedule_id AND status != 'CANCELLED';
+
+    IF v_curr_occupied >= v_max_cap THEN
+        RAISE EXCEPTION 'Kapacita lekce je vyčerpána.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_validate_reservation() OWNER TO admin_dbs2;
+
+--
+-- Name: pr_archive_inactive_members(); Type: PROCEDURE; Schema: public; Owner: admin_dbs2
+--
+
+CREATE PROCEDURE public.pr_archive_inactive_members()
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE member
+    SET is_active = false
+    WHERE role = 'member'
+      AND (is_active IS NULL OR is_active = true)
+      AND member_id NOT IN (
+          SELECT DISTINCT member_id FROM membership WHERE valid_to >= NOW()
+      );
+EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Chyba při archivaci členů: %', SQLERRM;
+END;
+$$;
+
+
+ALTER PROCEDURE public.pr_archive_inactive_members() OWNER TO admin_dbs2;
+
+--
+-- Name: pr_close_monthly_billing(); Type: PROCEDURE; Schema: public; Owner: admin_dbs2
+--
+
+CREATE PROCEDURE public.pr_close_monthly_billing()
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE payment
+    SET status = 'FAILED'
+    WHERE status = 'PENDING'
+      AND membership_id IN (
+          SELECT membership_id FROM membership WHERE valid_to < NOW()
+      );
+EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Chyba při uzavírání vyúčtování: %', SQLERRM;
+END;
+$$;
+
+
+ALTER PROCEDURE public.pr_close_monthly_billing() OWNER TO admin_dbs2;
+
+--
+-- Name: pr_secure_booking(integer, integer); Type: PROCEDURE; Schema: public; Owner: admin_dbs2
+--
+
+CREATE PROCEDURE public.pr_secure_booking(IN p_member_id integer, IN p_schedule_id integer)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO reservation (member_id, lesson_schedule_id, status, timestamp_creation, attendance)
+    VALUES (p_member_id, p_schedule_id, 'CREATED', NOW(), false);
+EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Rezervaci se nepodařilo vytvořit: %', SQLERRM;
+END;
+$$;
+
+
+ALTER PROCEDURE public.pr_secure_booking(IN p_member_id integer, IN p_schedule_id integer) OWNER TO admin_dbs2;
 
 SET default_tablespace = '';
 
@@ -458,8 +645,8 @@ ALTER TABLE public.reservation OWNER TO admin_dbs2;
 --
 
 CREATE TABLE public.reservation_payment (
-    payment_id integer,
-    reservation_id integer
+    payment_id integer NOT NULL,
+    reservation_id integer NOT NULL
 );
 
 
@@ -487,7 +674,9 @@ CREATE TABLE public.tariff (
     description text,
     name character varying(100) NOT NULL,
     price numeric(10,2) NOT NULL,
-    tariff_id smallint DEFAULT nextval(('"tariff_tariff_id_seq"'::text)::regclass) NOT NULL
+    tariff_id smallint DEFAULT nextval(('"tariff_tariff_id_seq"'::text)::regclass) NOT NULL,
+    duration_months smallint DEFAULT 1 NOT NULL,
+    duration_days smallint DEFAULT 0 NOT NULL
 );
 
 
@@ -535,6 +724,68 @@ CREATE SEQUENCE public.trainer_note_trainer_note_id_seq
 
 
 ALTER SEQUENCE public.trainer_note_trainer_note_id_seq OWNER TO admin_dbs2;
+
+--
+-- Name: v_members_no_active_membership; Type: VIEW; Schema: public; Owner: admin_dbs2
+--
+
+CREATE VIEW public.v_members_no_active_membership AS
+ SELECT m.member_id,
+    m.name,
+    m.surname,
+    m.email,
+    m.credit_balance,
+    max(ms.valid_to) AS last_membership_expiry
+   FROM (public.member m
+     LEFT JOIN public.membership ms ON ((m.member_id = ms.member_id)))
+  WHERE ((m.role)::text = 'member'::text)
+  GROUP BY m.member_id, m.name, m.surname, m.email, m.credit_balance
+ HAVING ((max(ms.valid_to) < now()) OR (max(ms.valid_to) IS NULL));
+
+
+ALTER VIEW public.v_members_no_active_membership OWNER TO admin_dbs2;
+
+--
+-- Name: v_schedule_with_capacity; Type: VIEW; Schema: public; Owner: admin_dbs2
+--
+
+CREATE VIEW public.v_schedule_with_capacity AS
+ SELECT ls.lesson_schedule_id,
+    ls.name AS lesson_name,
+    ls.start_time,
+    ls.maximum_capacity,
+    count(r.reservation_id) AS occupied_slots,
+    (ls.maximum_capacity - count(r.reservation_id)) AS free_slots
+   FROM (public.lesson_schedule ls
+     LEFT JOIN public.reservation r ON (((ls.lesson_schedule_id = r.lesson_schedule_id) AND ((r.status)::text <> 'CANCELLED'::text))))
+  GROUP BY ls.lesson_schedule_id, ls.name, ls.start_time, ls.maximum_capacity;
+
+
+ALTER VIEW public.v_schedule_with_capacity OWNER TO admin_dbs2;
+
+--
+-- Name: v_trainer_stats; Type: VIEW; Schema: public; Owner: admin_dbs2
+--
+
+CREATE VIEW public.v_trainer_stats AS
+ SELECT e.employee_id,
+    m.name,
+    m.surname,
+    count(DISTINCT ls.lesson_schedule_id) AS total_lessons,
+    count(r.reservation_id) AS total_reservations,
+    count(
+        CASE
+            WHEN (r.attendance = true) THEN 1
+            ELSE NULL::integer
+        END) AS attended_count
+   FROM (((public.employee e
+     JOIN public.member m ON ((e.employee_id = m.member_id)))
+     LEFT JOIN public.lesson_schedule ls ON ((e.employee_id = ls.employee_id)))
+     LEFT JOIN public.reservation r ON (((ls.lesson_schedule_id = r.lesson_schedule_id) AND ((r.status)::text <> 'CANCELLED'::text))))
+  GROUP BY e.employee_id, m.name, m.surname;
+
+
+ALTER VIEW public.v_trainer_stats OWNER TO admin_dbs2;
 
 --
 -- Data for Name: account; Type: TABLE DATA; Schema: public; Owner: admin_dbs2
@@ -621,9 +872,10 @@ COPY public.lesson_type_tariff (tariff_id, lesson_type_id) FROM stdin;
 --
 
 COPY public.member (credit_balance, email, entry_token, first_attendance, is_active, name, phone_number, photo, surname, password_hash, role, member_id, account_id) FROM stdin;
-0	asd@asd.cz	2a21fb16-fdc4-429e-8152-f85572ec2072	\N	\N	asd	\N	\N	dsa	$2b$12$M3k442yRkqHwJcubd.g60eHgtyT/W7X/3dpKuZ3WELMXDiVPV2jqG	member	1	\N
+0	jan@test.cz	24ca30e8-7df2-43e2-b46b-ab51b51a8c6e	\N	\N	Jan	\N	\N	Testovic	$2b$12$wY0aSC1vAn5uAQcUAtrDwexnBoTZW/PM4HlwQy/3DBdRQHy6nsMvm	admin	4	\N
 0	green013@post.cz	3a259629-c7f1-420c-80e9-8f9106139db6	\N	\N	jan	\N	\N	pospisil	$2b$12$50yq9WFyJdmy1YNCInN1MOKeeYcUMMRnlue0JJ6mUb2OKiunJbGpm	admin	2	\N
-0	honzapospa1@seznam.cz	93b08e50-07d1-4868-8fba-3524d1c66f81	\N	\N	jan	\N	\N	pospisil	$2b$12$K3/lTFg0tkfl3aa/JPhXOeCUTJIycOOcbu1ZiEjeDzi3ojQw3LBuK	trainer	3	\N
+200	asd@asd.cz	2a21fb16-fdc4-429e-8152-f85572ec2072	\N	\N	asd	\N	\N	dsa	$2b$12$M3k442yRkqHwJcubd.g60eHgtyT/W7X/3dpKuZ3WELMXDiVPV2jqG	member	1	\N
+500	honzapospa1@seznam.cz	93b08e50-07d1-4868-8fba-3524d1c66f81	\N	\N	jan	\N	\N	pospisil	$2b$12$K3/lTFg0tkfl3aa/JPhXOeCUTJIycOOcbu1ZiEjeDzi3ojQw3LBuK	trainer	3	\N
 \.
 
 
@@ -632,6 +884,8 @@ COPY public.member (credit_balance, email, entry_token, first_attendance, is_act
 --
 
 COPY public.membership (creation_date, is_auto_renewal, valid_from, valid_to, membership_id, member_id, tariff_id) FROM stdin;
+2026-04-20	f	2026-04-20 17:29:03.015059	2026-05-20 17:29:03.015059	1	2	1
+2026-04-20	f	2026-04-20 17:32:40.550074	2026-05-20 17:32:40.550074	2	3	1
 \.
 
 
@@ -640,7 +894,13 @@ COPY public.membership (creation_date, is_auto_renewal, valid_from, valid_to, me
 --
 
 COPY public.payment (amount, date, payment_details, payment_type, status, payment_id, discount_code_id, member_id, membership_id) FROM stdin;
-200.00	2026-04-09 11:49:28.129251+00	\N	CARD	PENDING	1	\N	1	\N
+500.00	2026-04-20 17:28:07.706932+00	\N	CARD	COMPLETED	3	\N	2	\N
+500.00	2026-04-20 17:29:03.028608+00	\N	CREDIT	COMPLETED	4	\N	2	1
+200.00	2026-04-09 11:49:28.129251+00	\N	CARD	COMPLETED	1	\N	1	\N
+300.00	2026-04-20 13:07:21.392491+00	\N	CARD	COMPLETED	2	\N	3	\N
+300.00	2026-04-20 17:31:24.717252+00	\N	CARD	COMPLETED	5	\N	3	\N
+500.00	2026-04-20 17:32:40.556127+00	\N	CREDIT	COMPLETED	6	\N	3	2
+400.00	2026-04-20 17:32:52.979034+00	\N	CARD	COMPLETED	7	\N	3	\N
 \.
 
 
@@ -664,7 +924,8 @@ COPY public.reservation_payment (payment_id, reservation_id) FROM stdin;
 -- Data for Name: tariff; Type: TABLE DATA; Schema: public; Owner: admin_dbs2
 --
 
-COPY public.tariff (description, name, price, tariff_id) FROM stdin;
+COPY public.tariff (description, name, price, tariff_id, duration_months, duration_days) FROM stdin;
+\N	Měsíční permanentka	500.00	1	1	0
 \.
 
 
@@ -743,21 +1004,21 @@ SELECT pg_catalog.setval('public.lesson_type_lesson_type_id_seq', 1, false);
 -- Name: member_member_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.member_member_id_seq', 3, true);
+SELECT pg_catalog.setval('public.member_member_id_seq', 4, true);
 
 
 --
 -- Name: membership_membership_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.membership_membership_id_seq', 1, false);
+SELECT pg_catalog.setval('public.membership_membership_id_seq', 2, true);
 
 
 --
 -- Name: payment_payment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.payment_payment_id_seq', 1, true);
+SELECT pg_catalog.setval('public.payment_payment_id_seq', 7, true);
 
 
 --
@@ -771,7 +1032,7 @@ SELECT pg_catalog.setval('public.reservation_reservation_id_seq', 1, false);
 -- Name: tariff_tariff_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin_dbs2
 --
 
-SELECT pg_catalog.setval('public.tariff_tariff_id_seq', 1, false);
+SELECT pg_catalog.setval('public.tariff_tariff_id_seq', 1, true);
 
 
 --
@@ -894,6 +1155,14 @@ ALTER TABLE ONLY public.reservation
 
 
 --
+-- Name: reservation_payment pk_reservation_payment_composite; Type: CONSTRAINT; Schema: public; Owner: admin_dbs2
+--
+
+ALTER TABLE ONLY public.reservation_payment
+    ADD CONSTRAINT pk_reservation_payment_composite PRIMARY KEY (reservation_id, payment_id);
+
+
+--
 -- Name: tariff pk_tariff; Type: CONSTRAINT; Schema: public; Owner: admin_dbs2
 --
 
@@ -907,6 +1176,62 @@ ALTER TABLE ONLY public.tariff
 
 ALTER TABLE ONLY public.trainer_note
     ADD CONSTRAINT pk_trainer_note PRIMARY KEY (trainer_note_id);
+
+
+--
+-- Name: idx_attendance_member; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_attendance_member ON public.attendance USING btree (member_id);
+
+
+--
+-- Name: idx_lesson_schedule_start; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_lesson_schedule_start ON public.lesson_schedule USING btree (start_time);
+
+
+--
+-- Name: idx_membership_member; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_membership_member ON public.membership USING btree (member_id);
+
+
+--
+-- Name: idx_membership_valid_to; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_membership_valid_to ON public.membership USING btree (valid_to);
+
+
+--
+-- Name: idx_reservation_lesson; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_reservation_lesson ON public.reservation USING btree (lesson_schedule_id);
+
+
+--
+-- Name: idx_reservation_member; Type: INDEX; Schema: public; Owner: admin_dbs2
+--
+
+CREATE INDEX idx_reservation_member ON public.reservation USING btree (member_id);
+
+
+--
+-- Name: reservation trg_after_reservation_confirmed; Type: TRIGGER; Schema: public; Owner: admin_dbs2
+--
+
+CREATE TRIGGER trg_after_reservation_confirmed AFTER UPDATE OF status ON public.reservation FOR EACH ROW EXECUTE FUNCTION public.fn_auto_deduct_credit();
+
+
+--
+-- Name: reservation trg_pre_reservation_check; Type: TRIGGER; Schema: public; Owner: admin_dbs2
+--
+
+CREATE TRIGGER trg_pre_reservation_check BEFORE INSERT ON public.reservation FOR EACH ROW EXECUTE FUNCTION public.fn_validate_reservation();
 
 
 --
@@ -1097,5 +1422,5 @@ ALTER TABLE ONLY public.trainer_note
 -- PostgreSQL database dump complete
 --
 
-\unrestrict a6VL4KTYcUDPkhJoeIRAFcxCvuOSOlGi4wWswawfYvdO5bnNcXGR5Rw1rgJhx9P
+\unrestrict Ph688PTaFH7qATYlmfbkW0KdlgmOBxs71ovi1kra4qcWFbpdCq8EhI5pXfMK9EO
 
