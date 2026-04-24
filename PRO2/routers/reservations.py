@@ -25,9 +25,7 @@ from schemas.reservation import (
 
 router = APIRouter(prefix="/reservations", tags=["Rezervace"])
 
-# Cena jedné lekce v kreditech – výchozí hodnota pro IR03.
-# V budoucnu bude cena brána z tabulky lesson_schedule nebo tariff.
-CENA_LEKCE: int = 100
+
 
 # Povolené přechody stavového automatu rezervace.
 # Klíč = aktuální stav, hodnota = seznam povolených cílových stavů.
@@ -39,35 +37,48 @@ POVOLENE_PRECHODY: dict[str, list[str]] = {
 }
 
 
-@router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ReservationStatusResponse, status_code=status.HTTP_201_CREATED)
 def vytvor_rezervaci(
     data: ReservationCreate,
     db: Session = Depends(get_db),
     current: CurrentUser = Depends(get_current_member),
 ):
     """
-    Vytvoří novou rezervaci ve stavu CREATED.
+    Vytvoří novou rezervaci přímo ve stavu CONFIRMED a atomicky odečte kredity.
 
-    Kredit se při vytvoření neodečítá – odečítá se až při potvrzení (CONFIRMED),
-    aby neblokoval kredity pro rezervace, které ještě nebyly potvrzeny.
+    SELECT FOR UPDATE na člena zabraňuje race condition při souběžných požadavcích.
     """
-    # Non-admins can only create reservations for themselves – identity comes from
-    # the JWT, not from the request body, to prevent any future auth-check regression.
     member_id = data.member_id if current.role == "admin" else current.member_id
+
+    # Načtení lekce pro zjištění skutečné ceny
+    lesson = db.get(LessonSchedule, data.lesson_schedule_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+    cena_lekce = int(lesson.price)
+
+    clen = db.execute(
+        select(Member).where(Member.member_id == member_id).with_for_update()
+    ).scalar_one_or_none()
+    if not clen:
+        raise HTTPException(status_code=404, detail="Člen nenalezen")
+    if clen.credit_balance < cena_lekce:
+        raise HTTPException(status_code=422, detail="Nedostatek kreditů")
+
+    clen.credit_balance -= cena_lekce
+
     nova_rezervace = Reservation(
         member_id=member_id,
         lesson_schedule_id=data.lesson_schedule_id,
         note=data.note,
         guest_name=data.guest_name,
-        status="CREATED",
+        status="CONFIRMED",
     )
     db.add(nova_rezervace)
     db.commit()
     db.refresh(nova_rezervace)
 
     # Auto-transition to FULL if capacity reached
-    lesson = db.get(LessonSchedule, nova_rezervace.lesson_schedule_id)
-    if lesson and lesson.status == 'OPEN':
+    if lesson.status == 'OPEN':
         active_count = db.query(Reservation).filter(
             Reservation.lesson_schedule_id == lesson.lesson_schedule_id,
             Reservation.status.in_(["CREATED", "CONFIRMED"])
@@ -76,7 +87,13 @@ def vytvor_rezervaci(
             lesson.status = 'FULL'
             db.commit()
 
-    return nova_rezervace
+    return {
+        "reservation_id": nova_rezervace.reservation_id,
+        "status": nova_rezervace.status,
+        "member_id": nova_rezervace.member_id,
+        "lesson_schedule_id": nova_rezervace.lesson_schedule_id,
+        "credit_balance": clen.credit_balance,
+    }
 
 
 @router.get("/", response_model=list[ReservationResponse])
@@ -136,6 +153,10 @@ def zmen_stav_rezervace(
 
     novy_zustatek: Optional[int] = None
 
+    # Načtení ceny lekce z databáze
+    lesson = db.get(LessonSchedule, rezervace.lesson_schedule_id)
+    cena_lekce = int(lesson.price) if lesson else 0
+
     # Potvrzení rezervace – odečtení kreditů
     # SELECT FOR UPDATE zabrání race condition při souběžných požadavcích:
     # bez zámku by dva souběžné requesty oba prošly kontrolou a odečetly kredity.
@@ -145,9 +166,9 @@ def zmen_stav_rezervace(
         ).scalar_one_or_none()
         if not clen:
             raise HTTPException(status_code=404, detail="Člen nenalezen")
-        if clen.credit_balance < CENA_LEKCE:
+        if clen.credit_balance < cena_lekce:
             raise HTTPException(status_code=422, detail="Nedostatek kreditů")
-        clen.credit_balance -= CENA_LEKCE
+        clen.credit_balance -= cena_lekce
         novy_zustatek = clen.credit_balance
 
     # Zrušení potvrzené rezervace – vrácení kreditů
@@ -156,7 +177,7 @@ def zmen_stav_rezervace(
             select(Member).where(Member.member_id == rezervace.member_id).with_for_update()
         ).scalar_one_or_none()
         if clen:
-            clen.credit_balance += CENA_LEKCE
+            clen.credit_balance += cena_lekce
             novy_zustatek = clen.credit_balance
 
     rezervace.status = novy_stav

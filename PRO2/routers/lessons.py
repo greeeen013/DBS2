@@ -28,7 +28,7 @@ from schemas.lesson import (
 
 router = APIRouter(prefix="/lessons", tags=["Lekce"])
 
-CENA_LEKCE: int = 100
+
 
 
 @router.get("/trainers/", response_model=List[TrainerResponse])
@@ -132,42 +132,6 @@ def get_lessons(db: Session = Depends(get_db)):
         result.append(LessonResponse(**lesson_dict))
     return result
 
-@router.get("/{lesson_id}", response_model=LessonDetailResponse)
-def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
-    """
-    Vrátí detail jedné konkrétní lekce včetně počtu registrovaných.
-    """
-    lesson = db.get(LessonSchedule, lesson_id)
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lekce nenalezena")
-
-    registered_count = db.query(Reservation).filter(
-        Reservation.lesson_schedule_id == lesson_id,
-        Reservation.status.in_(["CREATED", "CONFIRMED"])
-    ).count()
-
-    trainer = db.query(Member).filter(Member.member_id == lesson.employee_id).first()
-    trainer_name = f"{trainer.name} {trainer.surname}" if trainer else None
-
-    return LessonDetailResponse(
-        lesson_schedule_id=lesson.lesson_schedule_id,
-        name=lesson.name,
-        description=lesson.description,
-        duration=lesson.duration,
-        start_time=lesson.start_time,
-        end_time=lesson.end_time,
-        maximum_capacity=lesson.maximum_capacity,
-        status=lesson.status,
-        price=lesson.price,
-        is_private=lesson.is_private,
-        employee_id=lesson.employee_id,
-        lesson_template_id=lesson.lesson_template_id,
-        lesson_type_id=lesson.lesson_type_id,
-        registered_count=registered_count,
-        trainer_name=trainer_name,
-        allowed_tariff_ids=[t.tariff_id for t in lesson.allowed_tariffs],
-    )
-
 @router.get("/{lesson_id}/attendees", response_model=List[LessonAttendeeResponse])
 def get_lesson_attendees(lesson_id: int, db: Session = Depends(get_db), current: CurrentUser = Depends(get_current_member)):
     """
@@ -207,6 +171,45 @@ def get_lesson_attendees(lesson_id: int, db: Session = Depends(get_db), current:
         for r, m in rows
     ]
 
+@router.get("/{lesson_id}", response_model=LessonDetailResponse)
+def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
+    """
+    Vrátí detail jedné konkrétní lekce včetně počtu registrovaných.
+    POZOR: Tato route musí být definovaná AŽ PO všech cestách s dalšími segmenty
+    (např. /{lesson_id}/attendees), jinak by FastAPI zachytil /attendees jako lesson_id.
+    """
+    lesson = db.get(LessonSchedule, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+
+    registered_count = db.query(Reservation).filter(
+        Reservation.lesson_schedule_id == lesson_id,
+        Reservation.status.in_(["CREATED", "CONFIRMED"])
+    ).count()
+
+    trainer = db.query(Member).filter(Member.member_id == lesson.employee_id).first()
+    trainer_name = f"{trainer.name} {trainer.surname}" if trainer else None
+
+    return LessonDetailResponse(
+        lesson_schedule_id=lesson.lesson_schedule_id,
+        name=lesson.name,
+        description=lesson.description,
+        duration=lesson.duration,
+        start_time=lesson.start_time,
+        end_time=lesson.end_time,
+        maximum_capacity=lesson.maximum_capacity,
+        status=lesson.status,
+        price=lesson.price,
+        is_private=lesson.is_private,
+        employee_id=lesson.employee_id,
+        lesson_template_id=lesson.lesson_template_id,
+        lesson_type_id=lesson.lesson_type_id,
+        registered_count=registered_count,
+        trainer_name=trainer_name,
+        allowed_tariff_ids=[t.tariff_id for t in lesson.allowed_tariffs],
+    )
+
+
 @router.delete("/{lesson_id}/enrollments/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def kick_member(
     lesson_id: int,
@@ -235,7 +238,7 @@ def kick_member(
     if reservation.status == 'CONFIRMED':
         member = db.query(Member).filter(Member.member_id == reservation.member_id).first()
         if member:
-            member.credit_balance += CENA_LEKCE
+            member.credit_balance += int(lesson.price)
 
     reservation.status = 'CANCELLED'
 
@@ -308,7 +311,7 @@ def update_lesson_status(lesson_id: int, data: LessonStatusUpdate, db: Session =
             if res.status == "CONFIRMED":
                 member = db.query(Member).filter(Member.member_id == res.member_id).first()
                 if member:
-                    member.credit_balance += CENA_LEKCE
+                    member.credit_balance += int(lesson.price)
             res.status = "CANCELLED"
 
     db.commit()

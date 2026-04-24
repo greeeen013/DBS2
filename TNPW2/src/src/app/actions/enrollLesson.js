@@ -1,5 +1,4 @@
 import * as STATUS from '../../statuses.js';
-import * as CONST from '../../constants.js';
 
 export async function enrollLesson({ store, api, payload }) {
   const { lessonId } = payload;
@@ -11,12 +10,11 @@ export async function enrollLesson({ store, api, payload }) {
   }));
 
   try {
-    const reservation = await api.reservations.create({
+    const result = await api.reservations.create({
       member_id: memberId,
       lesson_schedule_id: lessonId,
     });
 
-    // Refresh lessons list and reservations to reflect new enrollment count
     const [lekce, rezervace] = await Promise.all([
       api.lessons.getAll(),
       api.reservations.getAll(memberId),
@@ -26,6 +24,7 @@ export async function enrollLesson({ store, api, payload }) {
       ...state,
       lessons: lekce,
       reservations: rezervace,
+      creditBalance: result.credit_balance ?? state.creditBalance,
       ui: {
         ...state.ui,
         status: STATUS.RDY,

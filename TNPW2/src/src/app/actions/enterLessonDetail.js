@@ -18,10 +18,16 @@ export async function enterLessonDetail({ store, api, payload }) {
     const [detail, enrollees] = await Promise.all([
       api.lessons.getDetail(lessonId),
       isStaff ? api.lessons.getAttendees(lessonId).catch((err) => {
-        console.warn('[enterLessonDetail] getAttendees failed:', err?.message ?? err);
+        // Uložíme chybu do stavu, aby se zobrazila jako notifikace ve view
+        const msg = err?.message ?? 'Nepodařilo se načíst seznam účastníků.';
+        store.setState((s) => ({
+          ...s,
+          ui: { ...s.ui, notification: { type: 'WARNING', message: msg } },
+        }));
         return [];
       }) : Promise.resolve([]),
     ]);
+
 
     store.setState((state) => ({
       ...state,

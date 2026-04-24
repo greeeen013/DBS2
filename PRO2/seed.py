@@ -9,11 +9,13 @@ Spuštění:
 Heslo pro všechny testovací účty: Heslo123
 
 Vytvoří:
-  - 2 typy lekcí (MMA, Kickbox)
-  - 3 šablony lekcí
+  - 3 typy lekcí (MMA, Kickbox, BJJ)
+  - 3 tariffy (Základní/Pokročilý/Premium) + 1 archivovaný
+  - 3 šablony lekcí (s vazbami na tariffy)
   - 1 admin, 2 trenéři, 3 členi
   - záznamy v tabulce employee pro trenéry a admina
-  - 4 plánované lekce
+  - 6 plánovaných lekcí (OPEN/COMPLETED/CANCELLED)
+  - aktivní členství + platba pro clen1 a clen2
 """
 
 import sys
@@ -21,13 +23,17 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 import bcrypt
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from db.session import engine, SessionLocal
 from models.base import Base
 from models.member import Member
 from models.lesson import Employee, LessonType, LessonTemplate, LessonSchedule
+from models.tariff import Tariff
+from models.membership import Membership
+from models.payment import Payment
 
 
 TEST_PASSWORD = "Heslo123"
@@ -56,6 +62,30 @@ def seed(db: Session):
     else:
         types_data = db.query(LessonType).all()
         print(f"  ⏭  Typy lekcí již existují ({existing_types} záznamů)")
+
+    # --- Tariffy ---
+    tariffs_raw = [
+        dict(name="Základní", description="Měsíční permanentka – přístup na základní lekce.", price=Decimal("500.00"), duration_months=1, duration_days=0, is_active=True),
+        dict(name="Pokročilý", description="Čtvrtletní permanentka pro pokročilé.", price=Decimal("1200.00"), duration_months=3, duration_days=0, is_active=True),
+        dict(name="Premium", description="Roční permanentka – neomezený přístup.", price=Decimal("4000.00"), duration_months=12, duration_days=0, is_active=True),
+        dict(name="Archivovaný tarif", description="Stará nabídka – již neprodáváme.", price=Decimal("400.00"), duration_months=1, duration_days=0, is_active=False),
+    ]
+
+    tariffs_data = []
+    existing_tariffs = db.query(Tariff).count()
+    if existing_tariffs == 0:
+        for td in tariffs_raw:
+            t = Tariff(**td)
+            db.add(t)
+            tariffs_data.append(t)
+        db.flush()
+        print(f"  ✅ Přidáno {len(tariffs_data)} tariffů (vč. 1 archivovaného)")
+    else:
+        tariffs_data = db.query(Tariff).filter(Tariff.is_active == True).all()
+        print(f"  ⏭  Tariffy již existují ({existing_tariffs} záznamů)")
+
+    # active tariffs by index for wiring below
+    active_tariffs = [t for t in tariffs_data if t.is_active]
 
     # --- Šablony lekcí ---
     templates_data = [
@@ -90,7 +120,13 @@ def seed(db: Session):
         for tmpl in templates_data:
             db.add(tmpl)
         db.flush()
-        print(f"  ✅ Přidáno {len(templates_data)} šablon lekcí")
+        # Wire allowed_tariffs to templates (only when active tariffs exist)
+        if active_tariffs:
+            templates_data[0].allowed_tariffs = active_tariffs[:2]   # Základní + Pokročilý
+            templates_data[1].allowed_tariffs = active_tariffs[1:]   # Pokročilý + Premium
+            templates_data[2].allowed_tariffs = active_tariffs        # všechny aktivní
+            db.flush()
+        print(f"  ✅ Přidáno {len(templates_data)} šablon lekcí (s tariff vazbami)")
     else:
         templates_data = db.query(LessonTemplate).all()
         print(f"  ⏭  Šablony již existují ({existing_templates} záznamů)")
@@ -237,6 +273,37 @@ def seed(db: Session):
         if added:
             db.flush()
             print(f"  ✅ Přidáno {added} lekcí")
+
+    # --- Členství (permanentky) ---
+    members_with_credit = [m for m in created_members if m.role == "member" and m.credit_balance > 0]
+    if members_with_credit and active_tariffs:
+        basic_tariff = active_tariffs[0]
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        for member in members_with_credit[:2]:  # clen1 a clen2
+            existing_ms = db.query(Membership).filter(Membership.member_id == member.member_id).first()
+            if existing_ms:
+                print(f"  ⏭  Členství pro {member.email} již existuje")
+                continue
+            membership = Membership(
+                creation_date=date.today(),
+                valid_from=now_utc,
+                valid_to=now_utc + timedelta(days=30),
+                member_id=member.member_id,
+                tariff_id=basic_tariff.tariff_id,
+                is_auto_renewal=False,
+            )
+            db.add(membership)
+            db.flush()
+            payment = Payment(
+                amount=basic_tariff.price,
+                payment_type="CREDIT",
+                status="COMPLETED",
+                member_id=member.member_id,
+                membership_id=membership.membership_id,
+            )
+            db.add(payment)
+            db.flush()
+            print(f"  ✅ Členství + platba pro {member.email} (tarif: {basic_tariff.name})")
 
     db.commit()
     print("\n✅ Seed dokončen!")
