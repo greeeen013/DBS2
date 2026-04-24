@@ -8,6 +8,7 @@ from db.dependencies import get_db
 from models.lesson import LessonSchedule, Employee, LessonTemplate, LessonType
 from models.member import Member
 from models.reservation import Reservation
+from models.tariff import Tariff
 from schemas.lesson import (
     LessonCreate,
     LessonResponse,
@@ -21,6 +22,7 @@ from schemas.lesson import (
     TeamAttendanceResponse,
     TrainerResponse,
     LessonTemplateResponse,
+    LessonTemplateCreate,
     LessonTypeResponse,
 )
 
@@ -46,7 +48,51 @@ def get_trainers(db: Session = Depends(get_db)):
 @router.get("/templates/", response_model=List[LessonTemplateResponse])
 def get_lesson_templates(db: Session = Depends(get_db)):
     """Načte seznam všech šablon lekcí."""
-    return db.query(LessonTemplate).all()
+    templates = db.query(LessonTemplate).all()
+    return [
+        LessonTemplateResponse(
+            lesson_template_id=t.lesson_template_id,
+            name=t.name,
+            description=t.description,
+            duration=t.duration,
+            maximum_capacity=t.maximum_capacity,
+            price=float(t.price),
+            lesson_type_id=t.lesson_type_id,
+            allowed_tariff_ids=[tar.tariff_id for tar in t.allowed_tariffs],
+        )
+        for t in templates
+    ]
+
+@router.post("/templates/", response_model=LessonTemplateResponse, status_code=status.HTTP_201_CREATED)
+def create_lesson_template(data: LessonTemplateCreate, db: Session = Depends(get_db), current: CurrentUser = Depends(get_current_member)):
+    """Vytvoří novou šablonu lekce (preset). Dostupné pro trenéra a admina."""
+    if current.role not in ('trainer', 'admin'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pouze trenér nebo admin může vytvořit šablonu.")
+    template = LessonTemplate(
+        name=data.name,
+        description=data.description,
+        duration=data.duration,
+        maximum_capacity=data.maximum_capacity,
+        price=data.price,
+        lesson_type_id=data.lesson_type_id,
+    )
+    db.add(template)
+    db.flush()
+    if data.allowed_tariff_ids:
+        tariffs = db.query(Tariff).filter(Tariff.tariff_id.in_(data.allowed_tariff_ids)).all()
+        template.allowed_tariffs = tariffs
+    db.commit()
+    db.refresh(template)
+    return LessonTemplateResponse(
+        lesson_template_id=template.lesson_template_id,
+        name=template.name,
+        description=template.description,
+        duration=template.duration,
+        maximum_capacity=template.maximum_capacity,
+        price=float(template.price),
+        lesson_type_id=template.lesson_type_id,
+        allowed_tariff_ids=[tar.tariff_id for tar in template.allowed_tariffs],
+    )
 
 
 @router.get("/types/", response_model=List[LessonTypeResponse])
@@ -81,6 +127,7 @@ def get_lessons(db: Session = Depends(get_db)):
             "lesson_template_id": lesson.lesson_template_id,
             "lesson_type_id": lesson.lesson_type_id,
             "registered_count": count,
+            "allowed_tariff_ids": [t.tariff_id for t in lesson.allowed_tariffs],
         }
         result.append(LessonResponse(**lesson_dict))
     return result
@@ -118,6 +165,7 @@ def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
         lesson_type_id=lesson.lesson_type_id,
         registered_count=registered_count,
         trainer_name=trainer_name,
+        allowed_tariff_ids=[t.tariff_id for t in lesson.allowed_tariffs],
     )
 
 @router.get("/{lesson_id}/attendees", response_model=List[LessonAttendeeResponse])
@@ -159,16 +207,80 @@ def get_lesson_attendees(lesson_id: int, db: Session = Depends(get_db), current:
         for r, m in rows
     ]
 
+@router.delete("/{lesson_id}/enrollments/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def kick_member(
+    lesson_id: int,
+    reservation_id: int,
+    db: Session = Depends(get_db),
+    current: CurrentUser = Depends(get_current_member),
+):
+    """Vyhodí člena z lekce (zruší jeho rezervaci). Trenér může vyhodit jen z vlastní lekce."""
+    if current.role not in ('trainer', 'admin'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pouze trenér nebo admin může vyhodit člena.")
+
+    lesson = db.get(LessonSchedule, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lekce nenalezena")
+
+    if current.role == 'trainer' and lesson.employee_id != current.member_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Trenér může vyhodit člena pouze z vlastní lekce.")
+
+    reservation = db.get(Reservation, reservation_id)
+    if not reservation or reservation.lesson_schedule_id != lesson_id:
+        raise HTTPException(status_code=404, detail="Rezervace nenalezena")
+
+    if reservation.status == 'CANCELLED':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rezervace je již zrušena.")
+
+    if reservation.status == 'CONFIRMED':
+        member = db.query(Member).filter(Member.member_id == reservation.member_id).first()
+        if member:
+            member.credit_balance += CENA_LEKCE
+
+    reservation.status = 'CANCELLED'
+
+    if lesson.status == 'FULL':
+        active_count = db.query(Reservation).filter(
+            Reservation.lesson_schedule_id == lesson_id,
+            Reservation.status.in_(["CREATED", "CONFIRMED"])
+        ).count()
+        if active_count < lesson.maximum_capacity:
+            lesson.status = 'OPEN'
+
+    db.commit()
+
+
 @router.post("/", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
 def create_lesson(data: LessonCreate, db: Session = Depends(get_db), current: CurrentUser = Depends(get_current_member)):
     """Vytvoří novou lekci."""
     if current.role not in ('trainer', 'admin'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pouze trenér nebo admin může vytvořit lekci.")
-    lesson = LessonSchedule(**data.model_dump())
+    lesson_data = data.model_dump(exclude={'allowed_tariff_ids'})
+    lesson = LessonSchedule(**lesson_data)
     db.add(lesson)
+    db.flush()
+    if data.allowed_tariff_ids:
+        tariffs = db.query(Tariff).filter(Tariff.tariff_id.in_(data.allowed_tariff_ids)).all()
+        lesson.allowed_tariffs = tariffs
     db.commit()
     db.refresh(lesson)
-    return lesson
+    return LessonResponse(
+        lesson_schedule_id=lesson.lesson_schedule_id,
+        name=lesson.name,
+        description=lesson.description,
+        duration=lesson.duration,
+        start_time=lesson.start_time,
+        end_time=lesson.end_time,
+        maximum_capacity=lesson.maximum_capacity,
+        status=lesson.status,
+        price=lesson.price,
+        is_private=lesson.is_private,
+        employee_id=lesson.employee_id,
+        lesson_template_id=lesson.lesson_template_id,
+        lesson_type_id=lesson.lesson_type_id,
+        registered_count=0,
+        allowed_tariff_ids=[t.tariff_id for t in lesson.allowed_tariffs],
+    )
 
 @router.patch("/{lesson_id}/status", response_model=LessonStatusResponse)
 def update_lesson_status(lesson_id: int, data: LessonStatusUpdate, db: Session = Depends(get_db), current: CurrentUser = Depends(get_current_member)):

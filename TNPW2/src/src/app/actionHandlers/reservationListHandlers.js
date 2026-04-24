@@ -35,9 +35,9 @@ export function reservationListHandlers(dispatch, viewState) {
   handlers.reservationHandlers = reservationCapabilities.map((caps) => {
     const resHandlers = { reservationId: caps.reservationId };
 
-    if (caps.canConfirm) {
-      resHandlers.onConfirm = (reservationId) =>
-        dispatch({ type: CONST.CONFIRM_RESERVATION, payload: { reservationId } });
+    if (caps.lessonId) {
+      resHandlers.onDetail = () =>
+        dispatch({ type: CONST.ENTER_LESSON_DETAIL, payload: { lessonId: caps.lessonId } });
     }
 
     if (caps.canCancel) {

@@ -62,3 +62,17 @@ export const SET_LESSON_FILTER       = 'SET_LESSON_FILTER';
 
 // Profil – upload fotky
 export const UPLOAD_PHOTO            = 'UPLOAD_PHOTO';
+
+// Přepínač zobrazení lekcí: seznam / rozvrh
+export const SET_LESSON_VIEW_MODE    = 'SET_LESSON_VIEW_MODE';
+export const LESSON_VIEW_LIST        = 'list';
+export const LESSON_VIEW_SCHEDULE    = 'schedule';
+
+// Filtr lekcí podle tarifu
+export const SET_LESSON_TARIFF_FILTER = 'SET_LESSON_TARIFF_FILTER';
+
+// Šablona lekce (preset) – uložení
+export const SAVE_LESSON_TEMPLATE    = 'SAVE_LESSON_TEMPLATE';
+
+// Vyhození člena z lekce (trenér/admin)
+export const KICK_MEMBER = 'KICK_MEMBER';

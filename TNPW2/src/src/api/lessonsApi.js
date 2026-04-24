@@ -98,5 +98,26 @@ export function createLessonsApi() {
         body: { members },
       });
     },
+
+    /**
+     * Vytvoří novou šablonu lekce (preset).
+     * POST /lessons/templates/
+     */
+    createTemplate(templateData) {
+      return apiFetch('/lessons/templates/', {
+        method: 'POST',
+        body: templateData,
+      });
+    },
+
+    /**
+     * Vyhodí člena z lekce (zruší jeho rezervaci).
+     * DELETE /lessons/{id}/enrollments/{reservationId}
+     */
+    kickMember(lessonId, reservationId) {
+      return apiFetch(`/lessons/${lessonId}/enrollments/${reservationId}`, {
+        method: 'DELETE',
+      });
+    },
   };
 }

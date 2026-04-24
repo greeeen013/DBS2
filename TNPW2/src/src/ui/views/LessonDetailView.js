@@ -6,8 +6,8 @@ import { createElement } from '../builder/createElement.js';
 import { getLessonStatusLabel, getLessonStatusClass } from '../builder/components/lessonCard.js';
 
 export function LessonDetailView({ viewState, handlers }) {
-  const { lesson, canEnroll, canUnenroll, canReopen, canOpen, canCancel, canClose, canSetAttendance } = viewState;
-  const { onBack, onEnroll, onUnenroll, onReopen, onOpen, onCancel, onClose, onSetAttendance } = handlers;
+  const { lesson, canEnroll, canUnenroll, canReopen, canOpen, canCancel, canClose, canSetAttendance, canSeeEnrollees, canKickMembers, enrollees = [] } = viewState;
+  const { onBack, onEnroll, onUnenroll, onReopen, onOpen, onCancel, onClose, onSetAttendance, onKickMember } = handlers;
 
   const container = createSection('container mt-15');
 
@@ -27,15 +27,15 @@ export function LessonDetailView({ viewState, handlers }) {
   const card = createSection(`card p-15 ${statusClass}`);
 
   const rows = [
-    ['Stav',          statusLabel],
-    ['Délka',         `${lesson.duration} minut`],
-    ['Kapacita',      `${lesson.registered_count ?? 0} / ${lesson.maximum_capacity}`],
-    ['Cena',          lesson.price != null ? `${lesson.price} Kč` : '—'],
-    ['Začátek',       lesson.start_time
-                        ? new Date(lesson.start_time).toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })
-                        : '—'],
-    ['Trenér',        lesson.trainer_name ?? String(lesson.employee_id ?? '—')],
-    ['Typ lekce',     lesson.lesson_type_name ?? '—'],
+    ['Stav',      statusLabel],
+    ['Délka',     `${lesson.duration} minut`],
+    ['Kapacita',  `${lesson.registered_count ?? 0} / ${lesson.maximum_capacity}`],
+    ...(lesson.price != null ? [['Cena', `${lesson.price} Kč`]] : []),
+    ['Začátek',   lesson.start_time
+                    ? new Date(lesson.start_time).toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })
+                    : '—'],
+    ['Trenér',    lesson.trainer_name ?? String(lesson.employee_id ?? '—')],
+    ['Typ lekce', lesson.lesson_type_name ?? '—'],
   ];
 
   rows.forEach(([label, value]) => {
@@ -89,5 +89,51 @@ export function LessonDetailView({ viewState, handlers }) {
   }
 
   container.appendChild(actionsRow);
+
+  // ---- Seznam přihlášených (trenér/admin) ------------------------------
+  if (canSeeEnrollees) {
+    const enrollSection = createSection('card p-15 mt-15');
+    enrollSection.appendChild(createElement('h3', { className: 'lesson-card__title mb-10' }, [
+      document.createTextNode(`Přihlášení členové (${enrollees.length})`),
+    ]));
+
+    if (enrollees.length === 0) {
+      enrollSection.appendChild(createElement('p', { className: 'text-muted' }, [
+        document.createTextNode('Zatím nikdo přihlášen.'),
+      ]));
+    } else {
+      enrollees.forEach((e) => {
+        const row = createDiv('enrollee-row', []);
+
+        const nameEl = createElement('span', { className: 'enrollee-name' }, [
+          document.createTextNode(`${e.member_name} ${e.member_surname}`),
+        ]);
+        const statusEl = createElement('span', { className: `enrollee-status text-muted` }, [
+          document.createTextNode(e.status),
+        ]);
+
+        row.appendChild(nameEl);
+        row.appendChild(statusEl);
+
+        if (canKickMembers && onKickMember) {
+          const kickBtn = addActionButton(
+            () => {
+              const fullName = `${e.member_name} ${e.member_surname}`;
+              if (!window.confirm(`Opravdu vyhodit ${fullName} z lekce?`)) return;
+              onKickMember(e.reservation_id, fullName);
+            },
+            'Vyhodit',
+            'button--danger btn-sm',
+          );
+          row.appendChild(kickBtn);
+        }
+
+        enrollSection.appendChild(row);
+      });
+    }
+
+    container.appendChild(enrollSection);
+  }
+
   return container;
 }

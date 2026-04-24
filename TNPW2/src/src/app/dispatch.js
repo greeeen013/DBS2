@@ -31,6 +31,8 @@ import { unenrollLesson } from './actions/unenrollLesson.js';
 import { reopenLesson } from './actions/reopenLesson.js';
 import { saveTeamAttendance } from './actions/saveTeamAttendance.js';
 import { uploadPhoto } from './actions/uploadPhoto.js';
+import { saveLessonTemplate } from './actions/saveLessonTemplate.js';
+import { kickMember } from './actions/kickMember.js';
 
 import * as CONST from '../constants.js';
 import * as STATUS from '../statuses.js';
@@ -111,7 +113,7 @@ export function createDispatcher(store, api) {
         return openLesson({ store, api, payload });
 
       case CONST.CREATE_LESSON:
-        return createLesson({ store, api, payload });
+        return createLesson({ store, api, payload, dispatch });
 
       case CONST.CANCEL_LESSON:
         return cancelLesson({ store, api, payload });
@@ -182,6 +184,18 @@ export function createDispatcher(store, api) {
 
       case CONST.SET_LESSON_FILTER:
         return store.setState((s) => ({ ...s, lessonFilter: payload.filter }));
+
+      case CONST.SET_LESSON_VIEW_MODE:
+        return store.setState((s) => ({ ...s, lessonViewMode: payload.mode }));
+
+      case CONST.SET_LESSON_TARIFF_FILTER:
+        return store.setState((s) => ({ ...s, lessonTariffFilter: payload.tariffId }));
+
+      case CONST.SAVE_LESSON_TEMPLATE:
+        return saveLessonTemplate({ store, api, payload });
+
+      case CONST.KICK_MEMBER:
+        return kickMember({ store, api, payload });
 
       case CONST.RECOVER_FROM_ERROR:
         return store.setState((state) => ({

@@ -10,10 +10,23 @@ export async function enterLessonList({ store, api }) {
   }));
 
   try {
-    const lekce = await api.lessons.getAll();
+    const memberId = store.getState().auth.memberId;
+    const [lekce, trainers, lessonTypes, tariffs, memberships, rezervace] = await Promise.all([
+      api.lessons.getAll(),
+      api.lessons.getTrainers(),
+      api.lessons.getLessonTypes(),
+      api.memberships.fetchTariffs(),
+      api.memberships.fetchMyMemberships(),
+      memberId ? api.reservations.getAll(memberId) : Promise.resolve([]),
+    ]);
     store.setState((state) => ({
       ...state,
       lessons: lekce,
+      trainers,
+      lessonTypes,
+      tariffs,
+      memberships,
+      reservations: rezervace,
       ui: { ...state.ui, mode: CONST.LESSON_LIST, status: STATUS.RDY },
     }));
   } catch {

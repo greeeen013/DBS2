@@ -46,5 +46,10 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
+  // 204 No Content – žádné tělo k parsování (DELETE endpointy)
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return null;
+  }
+
   return response.json();
 }

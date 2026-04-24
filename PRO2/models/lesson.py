@@ -1,9 +1,25 @@
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+# Junction: which tariffs are required for a lesson_schedule
+lesson_tariff = Table(
+    "lesson_tariff",
+    Base.metadata,
+    Column("lesson_schedule_id", Integer, ForeignKey("lesson_schedule.lesson_schedule_id", ondelete="CASCADE"), primary_key=True),
+    Column("tariff_id", Integer, ForeignKey("tariff.tariff_id", ondelete="CASCADE"), primary_key=True),
+)
+
+# Junction: which tariffs are associated with a lesson template (preset)
+lesson_template_tariff = Table(
+    "lesson_template_tariff",
+    Base.metadata,
+    Column("lesson_template_id", Integer, ForeignKey("lesson_template.lesson_template_id", ondelete="CASCADE"), primary_key=True),
+    Column("tariff_id", Integer, ForeignKey("tariff.tariff_id", ondelete="CASCADE"), primary_key=True),
+)
 
 class Employee(Base):
     __tablename__ = "employee"
@@ -29,6 +45,8 @@ class LessonTemplate(Base):
     maximum_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     lesson_type_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    allowed_tariffs = relationship("Tariff", secondary=lesson_template_tariff, lazy="selectin")
 
 class LessonSchedule(Base):
     """ORM mapování tabulky 'Lesson_schedule'."""
@@ -60,12 +78,8 @@ class LessonSchedule(Base):
         Integer, ForeignKey("lesson_type.lesson_type_id", ondelete="NO ACTION"), nullable=False
     )
 
-    # Note: Reservations are linked by reservation.lesson_schedule_id, but the relation 
-    # could be added here if needed.
-    reservations: Mapped[list["Reservation"]] = relationship(
-        "Reservation", 
-        backref="lesson"
-    )
+    reservations: Mapped[list["Reservation"]] = relationship("Reservation", backref="lesson")
+    allowed_tariffs = relationship("Tariff", secondary=lesson_tariff, lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<LessonSchedule(id={self.lesson_schedule_id}, name='{self.name}', status='{self.status}')>"
