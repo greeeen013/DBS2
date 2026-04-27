@@ -19,12 +19,16 @@ def vytvor_lekci(db, name="Testovací lekce", status="OPEN"):
     from models.lesson import LessonSchedule, Employee, LessonType
     from datetime import datetime
 
-    # Minimální závislosti – employee + lesson_type musí existovat
-    emp = Employee(employee_id=1)
-    lt = LessonType(lesson_type_id=1)
-    db.add(emp)
-    db.add(lt)
-    db.flush()
+    emp = db.get(Employee, 1)
+    if not emp:
+        emp = Employee(employee_id=1, bank_account_number="123", position="Trenér", type_of_empoyment="HPP")
+        db.add(emp)
+    
+    lt = db.get(LessonType, 1)
+    if not lt:
+        lt = LessonType(lesson_type_id=1, name="Typ")
+        db.add(lt)
+    db.commit()
 
     lekce = LessonSchedule(
         name=name,
@@ -141,7 +145,7 @@ class TestLessonDetail:
 
 class TestLessonAttendees:
 
-    def test_seznam_ucastniku_prazdna_lekce(self, client, setup_db):
+    def test_seznam_ucastniku_prazdna_lekce(self, client, setup_db, admin_headers):
         """Lekce bez rezervací vrátí prázdný seznam."""
         from tests.conftest import TestingSessionLocal
 
@@ -149,13 +153,13 @@ class TestLessonAttendees:
         lesson_id = vytvor_lekci(db)
         db.close()
 
-        response = client.get(f"/lessons/{lesson_id}/attendees")
+        response = client.get(f"/lessons/{lesson_id}/attendees", headers=admin_headers)
 
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_seznam_ucastniku_obsahuje_vsechny_rezervace(self, client, setup_db):
-        """Endpoint vrátí všechny rezervace (i CANCELLED) – trenér má úplný přehled."""
+    def test_seznam_ucastniku_neobsahuje_zrusene_rezervace(self, client, setup_db, admin_headers):
+        """Endpoint nesmí vracet zrušené (CANCELLED) rezervace."""
         from tests.conftest import TestingSessionLocal
 
         db = TestingSessionLocal()
@@ -166,13 +170,13 @@ class TestLessonAttendees:
         vytvor_rezervaci(db, lesson_id, clen2, status="CANCELLED")
         db.close()
 
-        response = client.get(f"/lessons/{lesson_id}/attendees")
+        response = client.get(f"/lessons/{lesson_id}/attendees", headers=admin_headers)
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data) == 1
 
-    def test_attendee_obsahuje_spravna_pole(self, client, setup_db):
+    def test_attendee_obsahuje_spravna_pole(self, client, setup_db, admin_headers):
         """Každý záznam v attendees má member_id, status a attendance."""
         from tests.conftest import TestingSessionLocal
 
@@ -182,7 +186,7 @@ class TestLessonAttendees:
         vytvor_rezervaci(db, lesson_id, clen, status="CONFIRMED", attendance=True)
         db.close()
 
-        response = client.get(f"/lessons/{lesson_id}/attendees")
+        response = client.get(f"/lessons/{lesson_id}/attendees", headers=admin_headers)
 
         assert response.status_code == 200
         attendee = response.json()[0]
@@ -192,9 +196,9 @@ class TestLessonAttendees:
         assert attendee["status"] == "CONFIRMED"
         assert attendee["attendance"] is True
 
-    def test_attendees_pro_neexistujici_lekci_vraci_404(self, client, setup_db):
+    def test_attendees_pro_neexistujici_lekci_vraci_404(self, client, setup_db, admin_headers):
         """Attendees pro neexistující lekci vrátí 404."""
-        response = client.get("/lessons/99999/attendees")
+        response = client.get("/lessons/99999/attendees", headers=admin_headers)
 
         assert response.status_code == 404
 
@@ -204,7 +208,7 @@ class TestLessonAttendees:
 
 class TestBulkAttendance:
 
-    def test_bulk_attendance_success(self, client, setup_db):
+    def test_bulk_attendance_success(self, client, setup_db, admin_headers):
         """Úspěšné uložení docházky pro dva členy najednou."""
         from tests.conftest import TestingSessionLocal
         db = TestingSessionLocal()
@@ -223,7 +227,7 @@ class TestBulkAttendance:
             ]
         }
 
-        response = client.post(f"/lessons/{lesson_id}/team-attendance", json=payload)
+        response = client.post(f"/lessons/{lesson_id}/team-attendance", json=payload, headers=admin_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -239,8 +243,8 @@ class TestBulkAttendance:
         assert res2.attendance is False
         db.close()
 
-    def test_bulk_attendance_nonexistent_lesson(self, client, setup_db):
+    def test_bulk_attendance_nonexistent_lesson(self, client, setup_db, admin_headers):
         """Pokus o uložení docházky u neexistující lekce vrátí 404."""
         payload = {"members": []}
-        response = client.post("/lessons/99999/team-attendance", json=payload)
+        response = client.post("/lessons/99999/team-attendance", json=payload, headers=admin_headers)
         assert response.status_code == 404

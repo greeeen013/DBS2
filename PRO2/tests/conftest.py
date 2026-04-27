@@ -145,3 +145,51 @@ def auth_headers_bez_kreditů(clen_bez_kreditů):
     """Bearer token pro člena bez kreditů."""
     token = vytvor_token(member_id=clen_bez_kreditů, role="member")
     return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture(autouse=True)
+def lekce_1(setup_db):
+    """Zajistí existenci lekce s ID 1 pro testování rezervací."""
+    from models.lesson import LessonSchedule, Employee, LessonType
+    from datetime import datetime
+    
+    db = TestingSessionLocal()
+    # Vytvoření závislostí, pokud neexistují
+    if not db.get(Employee, 1):
+        db.add(Employee(employee_id=1, bank_account_number="123", position="Trenér", type_of_empoyment="HPP"))
+    if not db.get(LessonType, 1):
+        db.add(LessonType(lesson_type_id=1, name="Box"))
+    db.commit()
+
+    # Vytvoření samotné lekce
+    if not db.get(LessonSchedule, 1):
+        lekce = LessonSchedule(
+            lesson_schedule_id=1,
+            name="Testovací lekce",
+            duration=60,
+            start_time=datetime(2026, 6, 1, 10, 0),
+            maximum_capacity=20,
+            status="OPEN",
+            price=100.0,
+            employee_id=1,
+            lesson_type_id=1,
+        )
+        db.add(lekce)
+        db.commit()
+    
+    # Pro testy historie přidáme i lekci 2
+    if not db.get(LessonSchedule, 2):
+        lekce2 = LessonSchedule(
+            lesson_schedule_id=2,
+            name="Další lekce",
+            duration=60,
+            start_time=datetime(2026, 6, 2, 10, 0),
+            maximum_capacity=20,
+            status="OPEN",
+            price=100.0,
+            employee_id=1,
+            lesson_type_id=1,
+        )
+        db.add(lekce2)
+        db.commit()
+
+    db.close()

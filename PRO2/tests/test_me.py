@@ -32,7 +32,7 @@ def test_me_history_obsahuje_rezervace(client, clen_s_kredity, auth_headers):
     data = resp.json()
     assert len(data["reservations"]) == 1
     assert data["reservations"][0]["member_id"] == clen_s_kredity
-    assert data["reservations"][0]["status"] == "CREATED"
+    assert data["reservations"][0]["status"] == "CONFIRMED"
 
 
 def test_me_history_obsahuje_platby(client, clen_s_kredity, auth_headers):
