@@ -214,6 +214,7 @@ function enrichWithLesson(reservations, lekce) {
       ...r,
       lesson_name: lesson?.name ?? null,
       lesson_start_time: lesson?.start_time ?? null,
+      lesson_duration: lesson?.duration ?? null,
     };
   });
 }

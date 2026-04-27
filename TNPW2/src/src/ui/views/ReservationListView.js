@@ -5,14 +5,41 @@ import { createDiv } from '../builder/components/div.js';
 import { addActionButton } from '../builder/components/button.js';
 import { createElement } from '../builder/createElement.js';
 
-function stavLabel(status) {
-  const m = { CREATED: 'Čeká na potvrzení', CONFIRMED: 'Potvrzená', CANCELLED: 'Zrušená', ATTENDED: 'Absolvována' };
-  return m[status] ?? status;
+function stavLabel(r) {
+  if (r.status === 'CREATED' || r.status === 'CONFIRMED') {
+    if (r.lesson_start_time) {
+      const now = new Date();
+      const start = new Date(r.lesson_start_time);
+      const durationMin = r.lesson_duration ?? 60;
+      const end = new Date(start.getTime() + durationMin * 60000);
+      if (now >= start && now <= end) {
+        return 'Probíhá';
+      } else if (now > end) {
+        return 'Proběhlo';
+      }
+    }
+    return 'Zarezervováno';
+  }
+  const m = { CANCELLED: 'Zrušená', ATTENDED: 'Absolvována' };
+  return m[r.status] ?? r.status;
 }
 
-function stavClass(status) {
-  const m = { CREATED: 'text-warning', CONFIRMED: 'text-success', CANCELLED: 'text-danger', ATTENDED: 'text-info' };
-  return m[status] ?? 'text-muted';
+function stavBadgeClass(r) {
+  if (r.status === 'CREATED' || r.status === 'CONFIRMED') {
+    if (r.lesson_start_time) {
+      const now = new Date();
+      const start = new Date(r.lesson_start_time);
+      const durationMin = r.lesson_duration ?? 60;
+      const end = new Date(start.getTime() + durationMin * 60000);
+      if (now >= start && now <= end) {
+        return 'info';
+      } else if (now > end) {
+        return 'completed';
+      }
+    }
+    return 'open';
+  }
+  return r.status === 'CANCELLED' ? 'cancelled' : 'completed';
 }
 
 function formatTime(iso) {
@@ -48,9 +75,17 @@ export function ReservationListView({ viewState, handlers }) {
     return container;
   }
 
-  // Aktivní a historické rezervace odděleně
-  const aktivni = rezervace.filter((r) => r.status === 'CREATED' || r.status === 'CONFIRMED');
-  const ostatni = rezervace.filter((r) => r.status !== 'CREATED' && r.status !== 'CONFIRMED');
+  const now = new Date();
+  const isPast = (r) => {
+    if (!r.lesson_start_time) return false;
+    const start = new Date(r.lesson_start_time);
+    const end = new Date(start.getTime() + (r.lesson_duration ?? 60) * 60000);
+    return now > end;
+  };
+
+  // Aktivní (budoucí a probíhající) a historické (proběhlé, zrušené, absolvované) rezervace odděleně
+  const aktivni = rezervace.filter((r) => (r.status === 'CREATED' || r.status === 'CONFIRMED') && !isPast(r));
+  const ostatni = rezervace.filter((r) => (r.status !== 'CREATED' && r.status !== 'CONFIRMED') || isPast(r));
 
   function renderKarty(seznam) {
     const sekce = createSection('cards');
@@ -67,8 +102,8 @@ export function ReservationListView({ viewState, handlers }) {
       const hlavicka = createDiv('lesson-card__header mb-5');
       const nadpis = createElement('h3', { className: 'lesson-card__title mb-0' }, [nazev]);
       const badge = createElement('span', {
-        className: `lesson-card__badge badge--${r.status === 'CONFIRMED' ? 'open' : r.status === 'CREATED' ? 'draft' : r.status === 'CANCELLED' ? 'cancelled' : 'completed'}`,
-      }, [stavLabel(r.status)]);
+        className: `lesson-card__badge badge--${stavBadgeClass(r)}`,
+      }, [stavLabel(r)]);
       hlavicka.appendChild(nadpis);
       hlavicka.appendChild(badge);
       karta.appendChild(hlavicka);

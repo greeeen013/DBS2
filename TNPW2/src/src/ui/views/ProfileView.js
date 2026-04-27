@@ -5,14 +5,42 @@ import { createDiv } from '../builder/components/div.js';
 import { addActionButton } from '../builder/components/button.js';
 import { createElement } from '../builder/createElement.js';
 
-function stavRez(status) {
-  const m = { CREATED: 'Čeká na potvrzení', CONFIRMED: 'Potvrzená', CANCELLED: 'Zrušená', ATTENDED: 'Absolvována' };
-  return m[status] ?? status;
+function stavRez(r) {
+  if (r.status === 'CREATED' || r.status === 'CONFIRMED') {
+    if (r.lesson_start_time) {
+      const now = new Date();
+      const start = new Date(r.lesson_start_time);
+      const durationMin = r.lesson_duration ?? 60;
+      const end = new Date(start.getTime() + durationMin * 60000);
+      if (now >= start && now <= end) {
+        return 'Probíhá';
+      } else if (now > end) {
+        return 'Proběhlo';
+      }
+    }
+    return 'Zarezervováno';
+  }
+  const m = { CANCELLED: 'Zrušená', ATTENDED: 'Absolvována' };
+  return m[r.status] ?? r.status;
 }
 
-function stavRezClass(status) {
-  const m = { CREATED: 'text-warning', CONFIRMED: 'text-success', CANCELLED: 'text-danger', ATTENDED: 'text-info' };
-  return m[status] ?? 'text-muted';
+function stavRezClass(r) {
+  if (r.status === 'CREATED' || r.status === 'CONFIRMED') {
+    if (r.lesson_start_time) {
+      const now = new Date();
+      const start = new Date(r.lesson_start_time);
+      const durationMin = r.lesson_duration ?? 60;
+      const end = new Date(start.getTime() + durationMin * 60000);
+      if (now >= start && now <= end) {
+        return 'text-info';
+      } else if (now > end) {
+        return 'text-muted';
+      }
+    }
+    return 'text-success';
+  }
+  const m = { CANCELLED: 'text-danger', ATTENDED: 'text-info' };
+  return m[r.status] ?? 'text-muted';
 }
 
 function stavPlatby(status) {
@@ -97,7 +125,7 @@ export function ProfileView({ viewState, handlers }) {
       // Řádek: název + status
       const hlavicka = createDiv('d-flex justify-between align-center mb-3');
       hlavicka.appendChild(createElement('strong', {}, [nazev]));
-      hlavicka.appendChild(createElement('span', { className: stavRezClass(r.status) }, [stavRez(r.status)]));
+      hlavicka.appendChild(createElement('span', { className: stavRezClass(r) }, [stavRez(r)]));
       karta.appendChild(hlavicka);
 
       if (casLekce) {
